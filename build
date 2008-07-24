@@ -1,0 +1,15 @@
+#!/bin/sh
+PREFIX=arm-linux-gnueabi
+
+${PREFIX}-as -meabi=4 -o init.o init.S
+${PREFIX}-gcc -Os -fno-builtin -nostdinc -c main.c -fPIC
+${PREFIX}-gcc -Os -fno-builtin -nostdinc -c console.c -fPIC
+${PREFIX}-gcc -Os -fno-builtin -nostdinc -c vsprintf.c -fPIC
+${PREFIX}-gcc -Os -fno-builtin -nostdinc -c printf.c -fPIC
+${PREFIX}-gcc -Os -fno-builtin -nostdinc -c font_8x8.c -fPIC
+${PREFIX}-gcc -Os -fno-builtin -nostdinc -c memstr.c -fPIC
+${PREFIX}-gcc -Os -fno-builtin -nostdinc -c font.c -fPIC
+${PREFIX}-gcc -Os -fno-builtin -nostdinc -c gpt.c -fPIC
+${PREFIX}-gcc -Os -fno-builtin -nostdinc -c ipu.c -fPIC
+${PREFIX}-gcc -static -T ld-script -nostdlib -o boot.elf init.o main.o console.o vsprintf.o printf.o font_8x8.o memstr.o font.o gpt.o ipu.o -lgcc
+${PREFIX}-objcopy -O binary -R .note -R .comment -S boot.elf boot
