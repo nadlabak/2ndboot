@@ -2,8 +2,8 @@
  * r0 should be virtual pointer to bundle.
  * r1 should be physical pointer to image target
  * r2 should be chunk size
- * let's assume that resulted image won't overwrite crucial TTBLs and stack
- * since we are rewriting kernel text it shouldn't happen,
+ * let's hope that resulted image won't overwrite crucial TTBLs and stack
+ * since we are rewriting kernel text it shouldn't happen
  * but we can't go back to running linux.
  */
 
@@ -116,7 +116,6 @@ _main:
 	cps #0x12  @ irq
 	ldr sp, sp_irq
 
-	cps #0x13
 	bl fixup_got
 	bl clean_bss
 	bl main

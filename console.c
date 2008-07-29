@@ -121,6 +121,14 @@ int console_initialized() {
   return sdc_screen.initialized;
 }
 
+struct font *console_getfont() {
+  return console_font;
+}
+
+void console_setfont(struct font *f) {
+  console_font = f;
+}
+
 int putchar(int c) {
   if (c == '\n') {
     console_newline(console_font);
