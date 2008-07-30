@@ -5,6 +5,8 @@
 #include "gpt.h"
 #include "error.h"
 #include "atag.h"
+#include "common.h"
+#include "mxc91231.h"
 
 void critical_error(error_t err) {
   if (console_initialized()) {
@@ -46,6 +48,7 @@ int main(void *img_base, uint32_t img_size, uint32_t img_checksum, void *boot_ba
 
   printf("Welcome. Nothing to see here yet.\n");
   printf("%p %08lx %08lx %p\n", img_base, img_size, img_checksum, boot_base);
+  modify_register32(CRM_AP_BASE_ADDR+0xc, 0, 1 << 20);
   if (checksum(img_base, img_size) != img_checksum) {
     critical_error(IMG_INCORRECT_CHECKSUM);
   }
