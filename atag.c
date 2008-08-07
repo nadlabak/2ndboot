@@ -1,9 +1,12 @@
 #include "types.h"
 #include "phone.h"
 #include "atag_priv.h"
+#include "images.h"
+#include "stdio.h"
 #include "atag.h"
 
 void *atag_build() {
+  struct buffer_tag *buf;
   struct tag *tag = (struct tag*)ATAG_BASE_ADDR;
 	
   tag->hdr.tag = ATAG_CORE;
@@ -29,8 +32,17 @@ void *atag_build() {
   tag->u.mbm_version.mbm_version = 0x1234;
   tag = tag_next(tag);
 
+  if ((buf = image_find(IMG_MOTFLATTREE))) {
+    tag->hdr.tag = ATAG_FLAT_DEV_TREE_ADDRESS;
+    tag->hdr.size = tag_size (tag_flat_dev_tree_address);
+    tag->u.flat_dev_tree_address.flat_dev_tree_address = (u32)buf->data;
+    tag->u.flat_dev_tree_address.flat_dev_tree_size = (u32)buf->size;
+    tag = tag_next(tag);
+  }
+
   tag->hdr.tag = ATAG_NONE;
   tag->hdr.size = 0;
+  printf("atags built\n");
   return (void*)ATAG_BASE_ADDR;
 }
 

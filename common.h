@@ -27,7 +27,11 @@ static inline void write32(uint32_t v, addr_t addr) {
   *((volatile uint32_t*)addr) = v;
 }
 
-static inline void modify_register32(uint32_t addr, uint32_t mask, uint32_t val) {
+static inline void modify_register16(addr_t addr, uint16_t mask, uint16_t val) {
+  write16(read16(addr) & (~mask) | val, addr);
+}
+
+static inline void modify_register32(addr_t addr, uint32_t mask, uint32_t val) {
   write32(read32(addr) & (~mask) | val, addr);
 }
 

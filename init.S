@@ -1,77 +1,173 @@
-/* Now we are running with MMU enabled
- * r0 should be virtual pointer to bundle.
- * r1 should be physical pointer to image target
- * r2 should be chunk size
- * let's hope that resulted image won't overwrite crucial TTBLs and stack
- * since we are rewriting kernel text it shouldn't happen
- * but we can't go back to running linux.
+.macro barrier, reg
+	mcr p15, 0, \reg, c7, c10, 4
+.endm
+.macro cpwait, reg
+	mrc p15, 0, \reg, c2, c0, 0
+	mov \reg, \reg
+	sub pc, pc, #4
+.endm
+.macro flush_tlb, reg
+	mov \reg, #0
+	mcr p15, 0, \reg, c8, c5, 0
+	mcr p15, 0, \reg, c8, c6, 0
+	cpwait \reg
+.endm
+
+/* Now we are running with MMU enabled _and_ phys != virt!
+ * r0 - virtual pointer to set of scattered buffers.
+ * r1 - count of buffers
+ * r2 - physical pointer to new trnaslation table
  */
+	cpsid   ifa
+	sub	r14, r15, #0xc         @ virt addr of entry point
+	mov	r3, #0
 
-	cpsid   ifa                    @ we don't need any interrupts here
-	sub	r14, r15, #0xc
-@	b _main
-	stmfd	sp!, {r0-r2}
-	mov     r3, #2                 @ skip size and checksum
-	add	r1, r1, #0x30000000    @ phys to virt
-merge_loop:
-	ldr     r4, [r0, r3, lsl #2]   @ VA of chunk
-	cmp     r4, #0
-	beq	unpacked               @ done
-	ldr	r2, [sp, #8]           @ chunk size
-copy_loop:
-	ldmia	r4!, {r5-r12}          @ chunk size should be 0x20-aligned
-	stmia	r1!, {r5-r12}
-	subs	r2, r2, #0x20
-	bne	copy_loop
-	add	r3, r3, #1
-	b	merge_loop
-unpacked:                              @ ok, we did it. now moto's kernel is corrupted badly, so no way back.
-	ldmfd	sp!, {r4-r6}
-	mov	r0, r5                 @ image target
-	ldr	r1, [r4]               @ image size
-	ldr	r2, [r4, #4]           @ image checksum
+	mcr	p15, 0, r3, c2, c0, 2  @ load new translation table
+	mcr	p15, 0, r2, c2, c0, 0
+	cpwait	r3
+	flush_tlb r2
+	
+	sub	r2, pc, #0             @ now we are switching to physical adress for smooth mmu turnoff.
+	sub	pc, r2, #0x30000000
 
-	mov 	r4, #0
-	mcr     p15, 0, r4, c7, c10, 4 @ memory barrier
+	b	__with_mmu             @ at that place, pc is physical.
+tags_table:
+@	kernel image
+	.word 0x1                      @ tag
+	.word 0x90008000	       @ target
+	.word 0x0                      @ size
+	.word 0x0                      @ cheksum
+@	initramfs
+	.word 0x2
+	.word 0x90800000
+	.word 0x0
+	.word 0x0
+@	motflattree
+	.word 0x3
+	.word 0x91000000
+	.word 0x0
+	.word 0x0
+@	ending zero
+	.word 0x0
+	.word 0x0
+	.word 0x0
+	.word 0x0
+virt_sp:
+	.word 0xc2000000
+__with_mmu:
+	ldr	sp, virt_sp
+	str	r14, [sp, #-4]!
+	mov	r3, r0
+	mov	r2, #0
+
+__buffers_loop:
+	cmp	r2, r1
+	beq	__buffers_end
+	ldr	r4, [r3], #4
+	add	r2, r2, #1
+	ldr	r0, [r4, #0x8]
+	bl	find_tag
+	cmp	r0, #0
+	mov	r5, r1
+	movne	r1, r4
+	blne	proccess_buffer
+	mov	r1, r5
+	b	__buffers_loop
+__buffers_end:
+	b	__turn_off_mmu
+
+find_tag:
+	stmfd	sp!, {r1, r2, lr}
+	adr	r1, tags_table
+__tags_loop:
+	ldr	r2, [r1]
+	cmp	r2, #0
+	moveq	r1, #0
+	cmpne	r2, r0
+	moveq	r0, r1
+	beq	__tags_end
+	add	r1, r1, #0x10
+	b	__tags_loop
+__tags_end:
+	ldmfd	sp!, {r1, r2, pc}
+
+proccess_buffer:
+	stmfd	sp!, {r1-r12,lr}
+	ldr	r2, [r1, #0x0]         @ size
+	str	r2, [r0, #0x8]
+	ldr	r2, [r1, #0x4]         @ checksum
+	str	r2, [r0, #0xc]
+	ldr	r14, [r0, #0x4]        @ target
+	add	r14, r14, #0x30000000  @ phys to virt
+	ldr	r3, [r1, #0xc]         @ chunks size
+	ldr	r2, [r1, #0x10]        @ chunks count
+	add	r1, r1, #0x14          @ chunks table
+	mov	r0, r3
+__chunks_loop:
+	cmp	r2, #0
+	beq	__chunks_done
+	sub	r2, r2, #1
+	ldr	r4, [r1], #4           @ new chunk
+	mov	r3, r0
+__copy_loop:
+	ldmia	r4!, {r5-r12}
+	stmia	r14!, {r5-r12}
+	subs 	r3, r3, #0x20
+	bne	__copy_loop
+__copy_done:
+	b	__chunks_loop
+__chunks_done:
+	ldmfd	sp!, {r1-r12,pc}
+
+__turn_off_mmu:
+	ldr	r0, [sp], #4
+	sub	r0, r0, #0x30000000
+
+	mov	r4, #0
+
 	mcr     p15, 0, r4, c13, c0, 0 @ set zero PID
+	mcr     p15, 0, r4, c7, c10, 0 @ clean D cache
+	mov	r5, #0x30000000        @ L2CC base
+
+	str	r4, [r5, #0x730]       @ L2 cache sync
+	barrier r4
+	mov	r6, #0xff
+	str	r6, [r5, #0x7bc]       @ request L2 cache clean
+	barrier r4
+l2_cln:	ldr	r6, [r5, #0x7bc]       @ and wait for it.
+	cmp	r6, #0
+	bne	l2_cln
 
 	mcr     p15, 0, r4, c7, c5,  0 @ invalidate I cache
-	mcr     p15, 0, r4, c7, c14, 0 @ clean & invalidate D cache
 
-        mrc     p15, 0, r7, c1, c0, 0
-        bic     r7, r7, #0x0005        @ - dcache & mmu
-        bic     r7, r7, #0x1800        @ - icache & branch prediction
-        mcr     p15, 0, r7, c1, c0, 0
+        mrc     p15, 0, r5, c1, c0, 0
+        bic     r5, r5, #0x0005        @ -dcache & -mmu
+        bic     r5, r5, #0x1000        @ -icache
+        mcr     p15, 0, r5, c1, c0, 0
 
 	mcr     p15, 0, r4, c7, c5, 4  @ flush prefetch buffer
-	nop
-	nop
-	nop
+	cpwait 	r4
 
-	mcr     p15, 0, r4, c7, c5,  0 @ invalidate I cache
-	mcr     p15, 0, r4, c7, c14, 0 @ clean & invalidate D cache
+	mcr     p15, 0, r4, c7, c5, 0  @ invalidate I cache
+	mcr     p15, 0, r4, c7, c6, 0  @ invalidate D cache
 	mcr     p15, 0, r4, c8, c5, 0  @ invalidate ITLB
 	mcr     p15, 0, r4, c8, c6, 0  @ invalidate DTLB
-	mov	r3, r14
+
 /* Now MMU is turned off
- * r0 - physical address of image target
- * r1 - image size
- * r2 - image checksum
-p * r3 - boot image base
+ * r0 - physical address of boot_base
  */
 _start: b _main
-/* This funcs shouldn't touch r0, r1, r2, r3 */
-/* r3 - image base */
+/* r0 - image base */
 fixup_got:
 	ldr r4, got_start
 	ldr r5, got_end
-	add r4, r4, r3
-	add r5, r5, r3
+	add r4, r4, r0
+	add r5, r5, r0
 fixup_loop:
 	cmp r4, r5
 	beq fixup_end
 	ldr r6, [r4]
-	add r6, r6, r3
+	add r6, r6, r0
 	str r6, [r4], #4
 	b fixup_loop
 fixup_end:
@@ -80,8 +176,8 @@ fixup_end:
 clean_bss:
 	ldr r4, bss_start
 	ldr r5, bss_end
-	add r4, r4, r3
-	add r5, r5, r3
+	add r4, r4, r0
+	add r5, r5, r0
 	mov r6, #0
 clean_loop:
 	cmp r4, r5
@@ -96,12 +192,12 @@ got_end:   .word __got_end__
 bss_start: .word __bss_start__
 bss_end:   .word __bss_end__
 boot_size: .word __boot_size__
-sp_svc:	.word 0x90400200
-sp_sys: .word 0x903FFE00
-sp_und: .word 0x903FFC00
-sp_abt: .word 0x903FFA00
-sp_fiq: .word 0x903FD800
-sp_irq: .word 0x903FE800
+sp_svc:	.word 0x92000000
+sp_sys: .word 0x91e00000
+sp_und: .word 0x91d80000
+sp_abt: .word 0x91d00000
+sp_fiq: .word 0x91b80000
+sp_irq: .word 0x91b00000
 _main:
 	cps #0x13 @ supervisor
 	ldr sp, sp_svc
@@ -115,9 +211,11 @@ _main:
 	ldr sp, sp_fiq
 	cps #0x12  @ irq
 	ldr sp, sp_irq
+	cps #0x13  @ supervisor
 
 	bl fixup_got
 	bl clean_bss
+	adr r1, tags_table
 	bl main
 forever:.word 0xeafffffe
 .global _start
@@ -126,3 +224,4 @@ forever:.word 0xeafffffe
 .global bss_start
 .global bss_end
 .global boot_size
+.global tags_table
