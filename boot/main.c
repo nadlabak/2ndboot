@@ -9,6 +9,8 @@
 #include "memory.h"
 #include "mxc91231.h"
 #include "images.h"
+#include "crc32.h"
+
 static struct buffer_tag *gBuffers;
 
 void critical_error(error_t err) {
@@ -24,27 +26,6 @@ int jump_to_linux(void *img_base, int arch, void *atag_list) {
   printf("branching to %p\n", img_base);
   linux_func = (int (*)(int, int, void*))img_base;
   return linux_func(0, arch, atag_list);
-}
-
-void checksum_init(uint32_t *ctx) {
-  *ctx = 0;
-}
-
-void checksum_update(uint32_t *ctx, const void *data, size_t size) {
-  if (size == 0) {
-    return;
-  }
-  while (size-- > 0) {
-    *ctx += ((const uint8_t*)data)[size];
-  }
-}
-
-uint32_t checksum(void *buf, uint32_t size) {
-  uint32_t ctx;
-
-  checksum_init(&ctx);
-  checksum_update(&ctx, buf, size);
-  return ctx;
 }
 
 struct buffer_tag *image_find(uint32_t tag) {
@@ -79,11 +60,12 @@ int main(void *boot_base, struct buffer_tag *tag_list) {
     if (tag_list->size == 0 || tag_list->data == NULL) {
       printf("-");
     } else {
-      uint32_t cs = checksum(tag_list->data, tag_list->size);
+      uint32_t cs = crc32(tag_list->data, tag_list->size);
+
       if (cs == tag_list->checksum) {
         printf("+");
       } else {
-        printf("!");
+        printf("%08x !", cs);
 	wrong_cs++;
       }
     }

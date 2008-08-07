@@ -4,6 +4,7 @@
 #include <linux/spinlock.h>
 #include <asm/uaccess.h>
 #include "hboot.h"
+#include "crc32.h"
 
 #define GOOD_ADDRESS(p)		    (__pa(p) >= 0x92000000)
 
@@ -136,19 +137,6 @@ void free_high_page(void *p) {
 	return free_high_pages(p, 0);
 }
 
-static void checksum_init(uint32_t *ctx) {
-	*ctx = 0;
-}
-
-void checksum_update(uint32_t *ctx, const void *data, size_t size) {
-	if (size == 0) {
-		return;
-	}
-	while (size-- > 0) {
-		*ctx += ((uint8_t*)data)[size];
-	}
-}
-
 static void free_scattered_buffer(struct scattered_buffer *sc) {
 	uint32_t i;
 	for (i = 0; i < sc->allocated_chunks; ++i) {
@@ -173,7 +161,7 @@ static struct scattered_buffer *allocate_scattered_buffer(uint32_t bufsize, uint
 	}
 
 	sc->size = bufsize;
-	checksum_init(&sc->checksum);
+	crc32_init_ctx(&sc->checksum);
 	sc->allocated_chunks = 0;
 	sc->chunk_size = CHUNK_SIZE;
 	sc->tag = tag;
@@ -214,7 +202,7 @@ static int append_scattered_buffer(struct scattered_buffer *sc, const char __use
 		cur_size = min(size, sc->chunk_size - chunk_off);
 		copy_from_user((char*)sc->chunks[chunk] + chunk_off, data + written, cur_size);
 		if (checksum) {
-			checksum_update(checksum, (char*)sc->chunks[chunk] + chunk_off, cur_size);
+			crc32_update(checksum, (const uint8_t*)sc->chunks[chunk] + chunk_off, cur_size);
 		}
 		written += cur_size;
 		chunk++;
@@ -380,6 +368,7 @@ void *get_bootlist(uint32_t *listsize) {
 
 		buf = &buffers.bufs[i];
 		if (buf->type == BUFFER_SCATTERED && buf->container.generic != NULL) {
+			crc32_final(&buf->container.scattered->checksum);
 			list[j++] = buf->container.generic;
 		}
 	}
