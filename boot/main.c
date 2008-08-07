@@ -31,7 +31,6 @@ int jump_to_linux(void *img_base, int arch, void *atag_list) {
 struct buffer_tag *image_find(uint32_t tag) {
   struct buffer_tag *buf;
   for (buf = gBuffers; buf->tag != 0; ++buf) {
-    printf("img tag %d\n", buf->tag);
     if (buf->tag == tag) {
       if (buf->size == 0 || buf->data == NULL) {
         return NULL;
