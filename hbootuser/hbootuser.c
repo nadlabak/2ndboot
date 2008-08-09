@@ -162,6 +162,7 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "Failed to load file\n");
 			goto out;
 		}
+		close(descs[i].fd);
 	}
 	printf("Everythin is loaded, booting\n");
 	fflush(stdout);
