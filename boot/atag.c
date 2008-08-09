@@ -40,6 +40,14 @@ void *atag_build() {
     tag = tag_next(tag);
   }
 
+  if ((buf = image_find(IMG_INITRAMFS))) {
+    tag->hdr.tag = ATAG_INITRD2;
+    tag->hdr.size = tag_size(tag_initrd);
+    tag->u.initrd.start = (u32)buf->data;
+    tag->u.initrd.size = (u32)buf->size;
+    tag = tag_next(tag);
+  }
+
   tag->hdr.tag = ATAG_NONE;
   tag->hdr.size = 0;
   printf("atags built\n");
