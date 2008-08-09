@@ -164,6 +164,8 @@ int main(int argc, char **argv) {
 		}
 		close(descs[i].fd);
 	}
+	fclose(fp);
+	fp = NULL;
 	printf("Everythin is loaded, booting\n");
 	fflush(stdout);
 	boot(loader->buffer);
