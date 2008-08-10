@@ -8,7 +8,6 @@
 #include <inttypes.h>
 #include "../hbootmod/hboot.h"
 
-#define MAX_DESCS 8
 int ctrlfd;
 struct desc {
 	int fd;
@@ -50,8 +49,8 @@ int try_file(const char *path, size_t *size) {
 	}
 	return fd;
 }
-int allocate_buffer(int type, size_t size, uint32_t tag) {
-	struct hboot_buffer_req req = {type, size, tag};
+int allocate_buffer(int type, int checksumed, size_t size, uint32_t tag) {
+	struct hboot_buffer_req req = {type, checksumed, size, tag};
 	int ret;
 	if ((ret = ioctl(ctrlfd, HBOOT_ALLOCATE_BUFFER, &req)) < 0) {
 		perror("ioctl");
@@ -105,7 +104,7 @@ int main(int argc, char **argv) {
 	FILE *fp;
 	uint32_t tag;
 	char fname[1024];
-	struct desc descs[MAX_DESCS], *loader = NULL;
+	struct desc descs[MAX_BUFFERS_COUNT], *loader = NULL;
 	int descs_cnt = 0;
 	int i;
 
@@ -122,9 +121,12 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "fopen");
 		return 1;
 	}
-	while ((fscanf(fp, "%s %u", fname, &tag) == 2) && (descs_cnt < MAX_DESCS)) {
+	while ((fscanf(fp, "%s %u", fname, &tag) == 2) && (descs_cnt < MAX_BUFFERS_COUNT)) {
 		int fd;
 		size_t size;
+		if (fname[0] == '#') {
+			continue;
+		}
 
 		fd = try_file(fname, &size);
 		if (fd < 0) {
@@ -141,13 +143,21 @@ int main(int argc, char **argv) {
 
 	for (i = 0; i < descs_cnt; ++i) {
 		int type;
+		int checksumed;
+
 		if (descs[i].tag == 0) {
 			type = BUFFER_PLAIN;
+			checksumed = 0;
 			loader = &descs[i];
 		} else {
-			type = BUFFER_SCATTERED;
+			if (descs[i].size < 2*4096) {
+				type = BUFFER_PLAIN;
+			} else {
+				type = BUFFER_SCATTERED;
+			}
+			checksumed = 1;
 		}
-		if ((descs[i].buffer = allocate_buffer(type, descs[i].size, descs[i].tag)) < 0) {
+		if ((descs[i].buffer = allocate_buffer(type, checksumed, descs[i].size, descs[i].tag)) < 0) {
 			fprintf(stderr, "Failed to alloc buffer\n");
 			goto out;
 		}

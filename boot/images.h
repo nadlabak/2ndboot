@@ -5,6 +5,7 @@
 #define IMG_LINUX		1
 #define IMG_INITRAMFS		2
 #define IMG_MOTFLATTREE		3
+#define IMG_CMDLINE		4
 
 #pragma pack(push,1)
 struct buffer_tag {

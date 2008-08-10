@@ -14,12 +14,14 @@
 .endm
 
 /* Now we are running with MMU enabled _and_ phys != virt!
- * r0 - virtual pointer to set of scattered buffers.
+ * r0 - pointer to set of scattered buffers.
  * r1 - count of buffers
- * r2 - physical pointer to new trnaslation table
+ * r2 - pointer to new trnaslation table
  */
 	cpsid   ifa
 	sub	r14, r15, #0xc         @ virt addr of entry point
+	sub	r14, r14, #0x30000000
+
 	mov	r3, #0
 
 	mcr	p15, 0, r3, c2, c0, 2  @ load new translation table
@@ -47,6 +49,11 @@ tags_table:
 	.word 0x91000000
 	.word 0x0
 	.word 0x0
+@	cmdline
+	.word 0x4
+	.word 0x91100000
+	.word 0x0
+	.word 0x0
 @	ending zero
 	.word 0x0
 	.word 0x0
@@ -57,21 +64,21 @@ virt_sp:
 __with_mmu:
 	ldr	sp, virt_sp
 	str	r14, [sp, #-4]!
-	mov	r3, r0
-	mov	r2, #0
 
+	mov	r3, r0
+	mov	r2, r1
 __buffers_loop:
-	cmp	r2, r1
-	beq	__buffers_end
+	subs	r2, r2, #1
+	bmi	__buffers_end
 	ldr	r4, [r3], #4
-	add	r2, r2, #1
-	ldr	r0, [r4, #0x8]
+	bic	r5, r4, #1
+	eor	r6, r5, r4
+	ldr	r0, [r5, #0x8]
 	bl	find_tag
 	cmp	r0, #0
-	mov	r5, r1
-	movne	r1, r4
+	movne	r1, r5
+	movne	r2, r6
 	blne	proccess_buffer
-	mov	r1, r5
 	b	__buffers_loop
 __buffers_end:
 	b	__turn_off_mmu
@@ -92,36 +99,73 @@ __tags_end:
 	ldmfd	sp!, {r1, r2, pc}
 
 proccess_buffer:
-	stmfd	sp!, {r1-r12,lr}
+	stmfd	sp!, {r1-r3,lr}
+	cmp	r2, #0                 @ plain ?
+
 	ldr	r2, [r1, #0x0]         @ size
 	str	r2, [r0, #0x8]
 	ldr	r2, [r1, #0x4]         @ checksum
 	str	r2, [r0, #0xc]
-	ldr	r14, [r0, #0x4]        @ target
-	add	r14, r14, #0x30000000  @ phys to virt
-	ldr	r3, [r1, #0xc]         @ chunks size
+
+	ldr	r0, [r0, #0x4]         @ target
+
+	beq	__plain
 	ldr	r2, [r1, #0x10]        @ chunks count
+	ldr	r3, [r1, #0xc]         @ chunks size
 	add	r1, r1, #0x14          @ chunks table
-	mov	r0, r3
+	bl	proccess_scattered
+	ldmfd	sp!, {r1-r3,pc}
+__plain:
+	ldr	r2, [r1, #0x0]         @ size
+	ldr	r1, [r1, #0xc]         @ source
+	bl	proccess_plain
+	ldmfd	sp!, {r1-r3,pc}
+
+proccess_scattered:
+	stmfd	sp!, {r4-r12,lr}
 __chunks_loop:
-	cmp	r2, #0
-	beq	__chunks_done
-	sub	r2, r2, #1
+	subs	r2, r2, #1
+	bmi	__chunks_done
 	ldr	r4, [r1], #4           @ new chunk
-	mov	r3, r0
+	mov	r5, r3                 @ chunk size
 __copy_loop:
-	ldmia	r4!, {r5-r12}
-	stmia	r14!, {r5-r12}
-	subs 	r3, r3, #0x20
+	ldmia	r4!, {r6-r12,r14}
+	stmia	r0!, {r6-r12,r14}
+	subs 	r5, r5, #0x20
 	bne	__copy_loop
 __copy_done:
 	b	__chunks_loop
 __chunks_done:
-	ldmfd	sp!, {r1-r12,pc}
+	ldmfd	sp!, {r4-r12,pc}
 
+proccess_plain:
+	stmfd	sp!, {r3-r7,lr}
+__qwords_loop:
+	cmp	r2, #0x10
+	blo	__qwords_done
+	ldmia	r1!, {r4-r7}
+	stmia	r0!, {r4-r7}
+	sub	r2, r2, #0x10
+	b	__qwords_loop
+__qwords_done:
+	tst	r2, #0x8
+	ldmneia	r1!, {r4,r5}
+	stmneia	r0!, {r4,r5}
+
+	tst	r2, #0x4
+	ldrne	r4, [r1], #4
+	strne	r4, [r0], #4
+	
+	movs	r2, r2, lsl #31
+	ldrcsh	r4, [r1], #2
+	strcsh	r4, [r0], #2
+	ldrmib	r4, [r1], #1
+	strmib	r4, [r0], #1
+	
+	ldmfd	sp!, {r3-r7,pc}
+	
 __turn_off_mmu:
 	ldr	r0, [sp], #4
-	sub	r0, r0, #0x30000000
 
 	mov	r4, #0
 
@@ -193,11 +237,11 @@ bss_start: .word __bss_start__
 bss_end:   .word __bss_end__
 boot_size: .word __boot_size__
 sp_svc:	.word 0x92000000
-sp_sys: .word 0x91e00000
-sp_und: .word 0x91d80000
-sp_abt: .word 0x91d00000
-sp_fiq: .word 0x91b80000
-sp_irq: .word 0x91b00000
+sp_sys: .word 0x91f80000
+sp_und: .word 0x91f7f000
+sp_abt: .word 0x91f7e000
+sp_fiq: .word 0x91f7d000
+sp_irq: .word 0x91f7c000
 _main:
 	cps #0x13 @ supervisor
 	ldr sp, sp_svc

@@ -64,7 +64,7 @@ int main(void *boot_base, struct buffer_tag *tag_list) {
       if (cs == tag_list->checksum) {
         printf("+");
       } else {
-        printf("%08x !", cs);
+        printf("!", cs);
 	wrong_cs++;
       }
     }
@@ -73,7 +73,6 @@ int main(void *boot_base, struct buffer_tag *tag_list) {
   if (wrong_cs > 0) {
     critical_error(IMG_INCORRECT_CHECKSUM);
   }
-
   modify_register32(CRM_AP_BASE_ADDR+0xc, 0, 1 << 20);
   if ((buf = image_find(IMG_LINUX)) != NULL) {
     jump_to_linux(buf->data, 1024, atag_build());

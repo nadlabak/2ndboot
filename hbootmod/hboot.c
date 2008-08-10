@@ -57,7 +57,7 @@ int hboot_boot(int handle) {
 	if (boot_entry == NULL) {
 		return -EINVAL;
 	}
-	bootlist = get_bootlist(&listsize);
+	bootlist = get_bootlist(&listsize, handle);
 	if (bootlist == NULL) {
 		return -ENOMEM;
 	}
@@ -114,7 +114,7 @@ static int hbootctrl_ioctl(struct inode *inode, struct file *file, unsigned int 
 				printk(KERN_WARNING CTRL_DEVNAME ": failed to copy buffer request\n");
 				return -EINVAL;
 			}
-			ret = allocate_buffer(buf_req.type, buf_req.size, buf_req.tag);
+			ret = allocate_buffer(buf_req.type, buf_req.checksumed, buf_req.size, buf_req.tag);
 			break;
 		case HBOOT_FREE_BUFFER:
 			handle = (int)arg;
