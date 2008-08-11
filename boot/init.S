@@ -66,18 +66,18 @@ __with_mmu:
 	str	r14, [sp, #-4]!
 
 	mov	r3, r0
-	mov	r2, r1
+	mov	r6, r1
 __buffers_loop:
-	subs	r2, r2, #1
+	subs	r6, r6, #1
 	bmi	__buffers_end
 	ldr	r4, [r3], #4
 	bic	r5, r4, #1
-	eor	r6, r5, r4
+	eor	r4, r5, r4
 	ldr	r0, [r5, #0x8]
 	bl	find_tag
 	cmp	r0, #0
 	movne	r1, r5
-	movne	r2, r6
+	movne	r2, r4
 	blne	proccess_buffer
 	b	__buffers_loop
 __buffers_end:
