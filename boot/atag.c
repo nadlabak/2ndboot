@@ -16,11 +16,17 @@ void *atag_build() {
   tag = tag_next(tag);
 
   if ((buf = image_find(IMG_CMDLINE))) {
+    char *atag_cmdline = tag->u.cmdline.cmdline;
+
     tag->hdr.tag = ATAG_CMDLINE;
     tag->hdr.size = (sizeof(struct tag_header) + buf->size + 1 + 3) >> 2;
-    memcpy(tag->u.cmdline.cmdline, buf->data, buf->size);
-    tag->u.cmdline.cmdline[buf->size] = '\0';
-    printf("cmdline: %s\n", tag->u.cmdline.cmdline);
+    memcpy(atag_cmdline, buf->data, buf->size);
+    if (atag_cmdline[buf->size-1] == '\xa') {
+      atag_cmdline[buf->size-1] = '\0';
+    } else {
+      atag_cmdline[buf->size] = '\0';
+    }
+    printf("cmdline: %s\n", atag_cmdline);
     tag = tag_next(tag);
   }
 
