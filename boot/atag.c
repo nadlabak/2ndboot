@@ -57,6 +57,18 @@ void *atag_build() {
     tag = tag_next(tag);
   }
 
+  if ((buf = image_find(IMG_USBFW))) {
+    tag->hdr.tag = ATAG_USB_FIRMWARE_ADDRESS;
+    tag->hdr.size = tag_size (tag_usb_firmware_address);
+    tag->u.usb_firmware_address.usb_firmware_address = (u32)buf->data;
+    tag = tag_next(tag);
+
+    tag->hdr.tag = ATAG_USB_FIRMWARE_SIZE;
+    tag->hdr.size = tag_size (tag_usb_firmware_size);
+    tag->u.usb_firmware_size.usb_firmware_size = (u32)buf->size;
+    tag = tag_next(tag);
+  }
+
   tag->hdr.tag = ATAG_NONE;
   tag->hdr.size = 0;
   return (void*)ATAG_BASE_ADDR;
