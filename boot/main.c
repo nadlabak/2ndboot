@@ -73,6 +73,12 @@ int main(void *boot_base, struct buffer_tag *tag_list) {
   if (wrong_cs > 0) {
     critical_error(IMG_INCORRECT_CHECKSUM);
   }
+/* Reset EPIT */
+  modify_register32(EPIT1_AP_BASE_ADDR+0x0, 0x1, 0);
+  modify_register32(EPIT1_AP_BASE_ADDR+0x0, 0, 0x10000);
+  while (read32(EPIT1_AP_BASE_ADDR+0x0) & 0x10000) {
+  }
+/* Enable NFC clock */
   modify_register32(CRM_AP_BASE_ADDR+0xc, 0, 1 << 20);
   if ((buf = image_find(IMG_LINUX)) != NULL) {
     jump_to_linux(buf->data, 1024, atag_build());
