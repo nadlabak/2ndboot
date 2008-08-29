@@ -178,21 +178,22 @@ __turn_off_mmu:
 	mcr     p15, 0, r4, c7, c10, 0 @ clean D cache
 	mov	r5, #0x30000000        @ L2CC base
 
+	ldr	r6, [r5, #0x100]       @ disable L2 cache
+	bic	r6, r6, #0x1
+	str	r6, [r5, #0x100]
+
 	str	r4, [r5, #0x730]       @ L2 cache sync
-	barrier r4
 	mov	r6, #0xff
-	str	r6, [r5, #0x7bc]       @ request L2 cache clean
-	barrier r4
-l2_cln:	ldr	r6, [r5, #0x7bc]       @ and wait for it.
+	str	r6, [r5, #0x7fc]       @ request L2 cache clean and invalidation
+l2_cln:	ldr	r6, [r5, #0x7fc]       @ and wait for it.
 	cmp	r6, #0
 	bne	l2_cln
 
 	mcr     p15, 0, r4, c7, c5,  0 @ invalidate I cache
 
-        mrc     p15, 0, r5, c1, c0, 0
-        bic     r5, r5, #0x0005        @ -dcache & -mmu
-        bic     r5, r5, #0x1000        @ -icache
-        mcr     p15, 0, r5, c1, c0, 0
+	mrc     p15, 0, r5, c1, c0, 0
+	bic     r5, r5, #0x0005        @ -dcache & -mmu
+	mcr     p15, 0, r5, c1, c0, 0
 
 	mcr     p15, 0, r4, c7, c5, 4  @ flush prefetch buffer
 	cpwait 	r4
