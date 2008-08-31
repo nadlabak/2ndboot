@@ -181,11 +181,14 @@ __turn_off_mmu:
 	ldr	r6, [r5, #0x100]       @ disable L2 cache
 	bic	r6, r6, #0x1
 	str	r6, [r5, #0x100]
+	barrier r4
 
 	str	r4, [r5, #0x730]       @ L2 cache sync
 	mov	r6, #0xff
 	str	r6, [r5, #0x7fc]       @ request L2 cache clean and invalidation
-l2_cln:	ldr	r6, [r5, #0x7fc]       @ and wait for it.
+	barrier r4
+l2_cln:
+	ldr	r6, [r5, #0x7fc]       @ and wait for it.
 	cmp	r6, #0
 	bne	l2_cln
 
