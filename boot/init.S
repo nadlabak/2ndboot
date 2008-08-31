@@ -212,33 +212,33 @@ l2_cln:
 _start: b _main
 /* r0 - image base */
 fixup_got:
-	ldr r4, got_start
-	ldr r5, got_end
-	add r4, r4, r0
-	add r5, r5, r0
+	ldr     r4, got_start
+	ldr     r5, got_end
+	add     r4, r4, r0
+	add     r5, r5, r0
 fixup_loop:
-	cmp r4, r5
-	beq fixup_end
-	ldr r6, [r4]
-	add r6, r6, r0
-	str r6, [r4], #4
-	b fixup_loop
+	cmp     r4, r5
+	beq     fixup_end
+	ldr     r6, [r4]
+	add     r6, r6, r0
+	str     r6, [r4], #4
+	b       fixup_loop
 fixup_end:
-	bx lr
+	bx      lr
 
 clean_bss:
-	ldr r4, bss_start
-	ldr r5, bss_end
-	add r4, r4, r0
-	add r5, r5, r0
-	mov r6, #0
+	ldr     r4, bss_start
+	ldr     r5, bss_end
+	add     r4, r4, r0
+	add     r5, r5, r0
+	mov     r6, #0
 clean_loop:
-	cmp r4, r5
-	beq clean_end
-	str r6, [r4], #4
-	b clean_loop
+	cmp     r4, r5
+	beq     clean_end
+	str     r6, [r4], #4
+	b       clean_loop
 clean_end:
-	bx lr
+	bx      lr
 
 got_start: .word __got_start__
 got_end:   .word __got_end__
@@ -252,29 +252,24 @@ sp_abt: .word 0x91f7e000
 sp_fiq: .word 0x91f7d000
 sp_irq: .word 0x91f7c000
 _main:
-	cps #0x13 @ supervisor
-	ldr sp, sp_svc
-	cps #0x1f @ system
-	ldr sp, sp_sys
-	cps #0x1b @ undef
-	ldr sp, sp_und
-	cps #0x17 @ abort
-	ldr sp, sp_abt
-	cps #0x11  @ fiq
-	ldr sp, sp_fiq
-	cps #0x12  @ irq
-	ldr sp, sp_irq
-	cps #0x13  @ supervisor
+	cps     #0x13 @ supervisor
+	ldr     sp, sp_svc
+	cps     #0x1f @ system
+	ldr     sp, sp_sys
+	cps     #0x1b @ undef
+	ldr     sp, sp_und
+	cps     #0x17 @ abort
+	ldr     sp, sp_abt
+	cps     #0x11  @ fiq
+	ldr     sp, sp_fiq
+	cps     #0x12  @ irq
+	ldr     sp, sp_irq
+	cps     #0x13  @ supervisor
 
-	bl fixup_got
-	bl clean_bss
-	adr r1, tags_table
-	bl main
-forever:.word 0xeafffffe
+	bl     fixup_got
+	bl     clean_bss
+	adr    r1, tags_table
+	bl     main
+forever:
+	.word 0xeafffffe
 .global _start
-.global got_start
-.global got_end
-.global bss_start
-.global bss_end
-.global boot_size
-.global tags_table
