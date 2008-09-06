@@ -89,6 +89,8 @@ int main(void *boot_base, struct buffer_tag *tag_list) {
   modify_register32(EPIT1_AP_BASE_ADDR+0x0, 0, 0x10000);
   while (read32(EPIT1_AP_BASE_ADDR+0x0) & 0x10000) {
   }
+/* Disable and clear KPP */
+  write16(0xf, KPP_BASE_ADDR+0x2);
 /* Enable NFC clock */
   modify_register32(CRM_AP_BASE_ADDR+0xc, 0, 1 << 20);
   if ((buf = image_find(IMG_LINUX)) != NULL) {
