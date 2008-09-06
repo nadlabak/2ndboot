@@ -100,6 +100,8 @@ int main(void *boot_base, struct buffer_tag *tag_list) {
   }
 /* Enable NFC clock */
   modify_register32(CRM_AP_BASE_ADDR+0xc, 0, 1 << 20);
+/* Enable UART3 clocks */
+  modify_register32(CRM_AP_BASE_ADDR+0x5c, 0, 1 << 16);
   if ((buf = image_find(IMG_LINUX)) != NULL) {
     jump_to_linux(buf->data, 1024, atag_build());
   } else {
