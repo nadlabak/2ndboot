@@ -73,6 +73,10 @@ int main(void *boot_base, struct buffer_tag *tag_list) {
   if (wrong_cs > 0) {
     critical_error(IMG_INCORRECT_CHECKSUM);
   }
+/* Reset USBOTG */
+  write32(0x3f, USBOTG_CTRL_BASE_ADDR+0x10);
+  while (read32(USBOTG_CTRL_BASE_ADDR+0x10)) {
+  }
 /* Reset EPIT */
   modify_register32(EPIT1_AP_BASE_ADDR+0x0, 0x1, 0);
   modify_register32(EPIT1_AP_BASE_ADDR+0x0, 0, 0x10000);
