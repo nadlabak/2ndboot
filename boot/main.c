@@ -73,10 +73,17 @@ int main(void *boot_base, struct buffer_tag *tag_list) {
   if (wrong_cs > 0) {
     critical_error(IMG_INCORRECT_CHECKSUM);
   }
+/* Enable USBOTG clocks */
+  modify_register32(CRM_AP_BASE_ADDR+0xc, 0, 1 << 12);
+  modify_register32(CRM_AP_BASE_ADDR+0x28, 0, 0x3 << 22);
+  modify_register32(CRM_AP_BASE_ADDR+0x34, 0, 0x3 << 16);
 /* Reset USBOTG */
+  write32(0x0, USBOTG_CTRL_BASE_ADDR+0xc);
   write32(0x3f, USBOTG_CTRL_BASE_ADDR+0x10);
   while (read32(USBOTG_CTRL_BASE_ADDR+0x10)) {
   }
+/* Disable USBOTG clocks */
+  modify_register32(CRM_AP_BASE_ADDR+0xc, 1 << 12, 0);
 /* Reset EPIT */
   modify_register32(EPIT1_AP_BASE_ADDR+0x0, 0x1, 0);
   modify_register32(EPIT1_AP_BASE_ADDR+0x0, 0, 0x10000);
