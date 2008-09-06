@@ -94,6 +94,10 @@ int main(void *boot_base, struct buffer_tag *tag_list) {
 /* Stop SDMA */
   write32(0xffffffff, SDMA_BASE_ADDR+0x8);
   write32(0xffffffff, SDMA_BASE_ADDR+0x4);
+/* Reset SDMA */
+  write32(0x1, SDMA_BASE_ADDR+0x24);
+  while (read32(SDMA_BASE_ADDR+0x28) & 0x1) {
+  }
 /* Enable NFC clock */
   modify_register32(CRM_AP_BASE_ADDR+0xc, 0, 1 << 20);
   if ((buf = image_find(IMG_LINUX)) != NULL) {
