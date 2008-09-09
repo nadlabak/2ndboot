@@ -45,5 +45,5 @@ void gpt_init() {
   modify_register32(GPT1_GPTCR, 0, GPTCR_ENMOD);
   modify_register32(GPT1_GPTCR, GPTCR_CLKSRC_MASK, GPTCR_CLKSRC_CLK32K);
   modify_register32(GPT1_GPTCR, 0, GPTCR_FRR);
-  write32(31, GPT1_GPTPR);
+  write32(0, GPT1_GPTPR);
 }
