@@ -1,8 +1,9 @@
 #!/bin/sh
 PREFIX=arm-linux-gnueabi
 CFLAGS="-Os -fno-stack-protector -fno-builtin -nostdinc"
+VERSION="`hg id -q`" || VERSION=unknown
 ${PREFIX}-as -meabi=4 -o init.o init.S
-${PREFIX}-gcc $CFLAGS -c main.c -fPIC
+${PREFIX}-gcc $CFLAGS -c main.c -DLDR_VERSION="\"$VERSION\"" -fPIC
 ${PREFIX}-gcc $CFLAGS -c console.c -fPIC
 ${PREFIX}-gcc $CFLAGS -c vsprintf.c -fPIC
 ${PREFIX}-gcc $CFLAGS -c printf.c -fPIC

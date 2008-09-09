@@ -53,10 +53,10 @@ int main(void *boot_base, struct buffer_tag *tag_list) {
   console_init(&font_8x8);
   gpt_init();
 
-  printf("Welcome. Nothing to see here yet.\n");
-  printf("tag      addr     size     checksum\n");
+  printf("e8 loader rev %s.\n", LDR_VERSION);
+  printf("tag      addr     size\n");
   for (; tag_list->tag != 0; ++tag_list) {
-    printf("%08x %08p %08x %08x ", tag_list->tag, tag_list->data, tag_list->size, tag_list->checksum);
+    printf("%08x %08p %08x ", tag_list->tag, tag_list->data, tag_list->size);
     if (tag_list->size == 0 || tag_list->data == NULL) {
       printf("-");
     } else {
@@ -65,7 +65,7 @@ int main(void *boot_base, struct buffer_tag *tag_list) {
       if (cs == tag_list->checksum) {
         printf("+");
       } else {
-        printf("!", cs);
+        printf("!");
 	wrong_cs++;
       }
     }
