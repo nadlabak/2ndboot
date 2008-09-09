@@ -14,5 +14,6 @@ ${PREFIX}-gcc $CFLAGS -c ipu.c -fPIC
 ${PREFIX}-gcc $CFLAGS -c atag.c -fPIC
 ${PREFIX}-gcc $CFLAGS -c crc32.c -fPIC
 ${PREFIX}-gcc $CFLAGS -c hw_misc.c -fPIC
-${PREFIX}-gcc -static -T ld-script -nostdlib -o boot.elf init.o main.o console.o vsprintf.o printf.o font_8x8.o memstr.o font.o gpt.o ipu.o atag.o crc32.o hw_misc.o -lgcc
+${PREFIX}-gcc $CFLAGS -c mu.c -fPIC
+${PREFIX}-gcc -static -T ld-script -nostdlib -o boot.elf init.o main.o console.o vsprintf.o printf.o font_8x8.o memstr.o font.o gpt.o ipu.o atag.o crc32.o hw_misc.o mu.o -lgcc
 ${PREFIX}-objcopy -O binary -R .note -R .comment -S boot.elf boot

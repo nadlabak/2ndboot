@@ -8,6 +8,7 @@
 #include "common.h"
 #include "memory.h"
 #include "hw_misc.h"
+#include "mu.h"
 #include "images.h"
 #include "crc32.h"
 
@@ -74,6 +75,7 @@ int main(void *boot_base, struct buffer_tag *tag_list) {
     critical_error(IMG_INCORRECT_CHECKSUM);
   }
 
+  mu_dsp_reset();
   hw_preboot();
 
   if ((buf = image_find(IMG_LINUX)) != NULL) {
