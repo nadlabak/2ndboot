@@ -21,12 +21,12 @@ int dsp_mem_read_word(addr_t addr, uint32_t *dest) {
   return 0;
 }
 
-int dsp_mem_write_word(addr_t addr, uint32_t word) {
+int dsp_mem_write_word(addr_t addr, uint32_t *word) {
   uint32_t tmp;
 
   mu_write(0, 0x1);
   mu_write(1, addr);
-  mu_write(2, word);
+  mu_write(2, *word);
   mu_read(0, &tmp);
   if (tmp != 0x1) {
     printf("%08x failed write\n", addr);
@@ -54,7 +54,7 @@ int dsp_mem_write(addr_t dest, uint32_t *src, unsigned int words) {
   unsigned int wr;
 
   for (wr = 0; wr < words; ++wr) {
-    if (dsp_mem_write_word(dest, *src)) {
+    if (dsp_mem_write_word(dest, src)) {
       printf("write failed on %08x\n", wr);
       return -1;
     }
