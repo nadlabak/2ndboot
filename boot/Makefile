@@ -24,7 +24,7 @@ CFLAGS		+= $(CFLAGS) -DLDR_VERSION=\"$(VERSION)\"
 $(ELF_TARGET):	$(OBJS) $(LD_SCRIPT)
 	$(LD) -T$(LD_SCRIPT) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 $(RAW_TARGET):	$(ELF_TARGET)
-	$(OBJCOPY) -R .note -R .comment -S $< $@
+	$(OBJCOPY) -O binary -R .note -R .comment -S $< $@
 
 clean:
 	rm -f $(OBJS) $(ELF_TARGET) $(RAW_TARGET)
