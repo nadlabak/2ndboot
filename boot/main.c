@@ -3,6 +3,7 @@
 #include "font.h"
 #include "stdio.h"
 #include "gpt.h"
+#include "nfc.h"
 #include "error.h"
 #include "atag.h"
 #include "common.h"
@@ -52,6 +53,7 @@ int main(void *boot_base, struct buffer_tag *tag_list) {
   font_init();
   console_init(&font_8x8);
   gpt_init();
+  nfc_init();
 
   printf("e8 loader rev %s.\n", LDR_VERSION);
   printf("tag      addr     size\n");
