@@ -1,3 +1,6 @@
+DESTDIR		 = /mmc/mmca1/ldr
+DESTHOST	 = 192.168.16.2
+
 PREFIX		 = /mnt/hd/e8-gcc/bin/arm-linux-gnueabi
 CFLAGS		:= -fno-stack-protector -fno-builtin -nostdinc -fPIC
 LDFLAGS		:= -static -nostdlib -fPIC
@@ -20,7 +23,7 @@ OBJS		:= $(ASM_OBJS) $(C_OBJS)
 VERSION		 = $(shell hg -q id 2>/dev/null || echo unknown)
 CFLAGS		+= $(CFLAGS) -DLDR_VERSION=\"$(VERSION)\"
 
-.PHONY		= all clean
+.PHONY		= all clean install
 $(ELF_TARGET):	$(OBJS) $(LD_SCRIPT)
 	$(LD) -T$(LD_SCRIPT) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 $(RAW_TARGET):	$(ELF_TARGET)
@@ -29,6 +32,8 @@ $(RAW_TARGET):	$(ELF_TARGET)
 clean:
 	rm -f $(OBJS) $(ELF_TARGET) $(RAW_TARGET)
 all:		$(RAW_TARGET)
+install:	all
+	ftp-upload --user root --host $(DESTHOST) --dir $(DESTDIR) $(RAW_TARGET)
 
 .SECONDEXPANSION:
 $(ASM_OBJS):	$$(patsubst %.o,%.S,$$@)
