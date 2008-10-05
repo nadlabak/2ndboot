@@ -23,17 +23,18 @@ OBJS		:= $(ASM_OBJS) $(C_OBJS)
 VERSION		 = $(shell hg -q id 2>/dev/null || echo unknown)
 CFLAGS		+= $(CFLAGS) -DLDR_VERSION=\"$(VERSION)\"
 
-.PHONY		= all clean install
+.PHONY		 : all clean install
+all:		$(RAW_TARGET)
+install:	all
+	ftp-upload --user root --host $(DESTHOST) --dir $(DESTDIR) $(RAW_TARGET)
+clean:
+	rm -f $(OBJS) $(ELF_TARGET) $(RAW_TARGET)
+
 $(ELF_TARGET):	$(OBJS) $(LD_SCRIPT)
 	$(LD) -T$(LD_SCRIPT) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 $(RAW_TARGET):	$(ELF_TARGET)
 	$(OBJCOPY) -O binary -R .note -R .comment -S $< $@
 
-clean:
-	rm -f $(OBJS) $(ELF_TARGET) $(RAW_TARGET)
-all:		$(RAW_TARGET)
-install:	all
-	ftp-upload --user root --host $(DESTHOST) --dir $(DESTDIR) $(RAW_TARGET)
 
 .SECONDEXPANSION:
 $(ASM_OBJS):	$$(patsubst %.o,%.S,$$@)
