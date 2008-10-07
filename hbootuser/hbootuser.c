@@ -50,8 +50,16 @@ int try_file(const char *path, size_t *size) {
 	return fd;
 }
 int allocate_buffer(int type, int checksumed, size_t size, uint32_t tag) {
-	struct hboot_buffer_req req = {type, checksumed, size, tag};
+	struct hboot_buffer_req req;
 	int ret;
+	req.tag = (uint16_t)tag;
+	req.attrs = 0;
+	if (checksumed) {
+		req.attrs |= BUFFER_CHECKSUMED;
+	}
+	req.type = (uint8_t)type;
+	req.size = (uint32_t)size;
+
 	if ((ret = ioctl(ctrlfd, HBOOT_ALLOCATE_BUFFER, &req)) < 0) {
 		perror("ioctl");
 	}

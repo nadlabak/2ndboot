@@ -114,7 +114,7 @@ static int hbootctrl_ioctl(struct inode *inode, struct file *file, unsigned int 
 				printk(KERN_WARNING CTRL_DEVNAME ": failed to copy buffer request\n");
 				return -EINVAL;
 			}
-			ret = allocate_buffer(buf_req.type, buf_req.checksumed, buf_req.size, buf_req.tag);
+			ret = allocate_buffer(buf_req.tag, buf_req.type, buf_req.attrs, buf_req.size);
 			break;
 		case HBOOT_FREE_BUFFER:
 			handle = (int)arg;

@@ -76,13 +76,10 @@ __buffers_loop:
 	subs	r6, r6, #1
 	bmi	__buffers_end
 	ldr	r4, [r3], #4
-	bic	r5, r4, #1
-	eor	r4, r5, r4
-	ldr	r0, [r5, #0x8]
+	ldrh	r0, [r4]
 	bl	find_tag
 	cmp	r0, #0
-	movne	r1, r5
-	movne	r2, r4
+	movne	r1, r4
 	blne	proccess_buffer
 	b	__buffers_loop
 __buffers_end:
@@ -105,29 +102,32 @@ __tags_end:
 
 proccess_buffer:
 	stmfd	sp!, {r1-r3,lr}
-	cmp	r2, #0                 @ plain ?
 
-	ldr	r2, [r1, #0x0]         @ size
-	str	r2, [r0, #0x8]
-	ldr	r2, [r1, #0x4]         @ checksum
+	ldr	r2, [r1, #0x8]         @ checksum
 	str	r2, [r0, #0xc]
-
+	ldr	r2, [r1, #0x4]         @ size
+	str	r2, [r0, #0x8]
 	ldr	r0, [r0, #0x4]         @ target
-
-	beq	__plain
-	ldr	r2, [r1, #0x10]        @ chunks count
-	ldr	r3, [r1, #0xc]         @ chunks size
-	add	r1, r1, #0x14          @ chunks table
-	bl	proccess_scattered
-	ldmfd	sp!, {r1-r3,pc}
+	ldrb	r3, [r1, #0x2]         @ type
+	add	r1, r1, #0xc           @ non-abstract part
+	cmp	r3, #1                 @ max type
+	bgt	__final
+	add	pc, pc, r3, lsl #3
+	nop
 __plain:
-	ldr	r2, [r1, #0x0]         @ size
-	ldr	r1, [r1, #0xc]         @ source
 	bl	proccess_plain
+	b	__final
+__scatt:
+	bl	proccess_scattered
+	b	__final
+__final:
 	ldmfd	sp!, {r1-r3,pc}
 
 proccess_scattered:
 	stmfd	sp!, {r4-r12,lr}
+	ldr	r2, [r1, #0x4]         @ chunks count
+	ldr	r3, [r1]               @ chunk size
+	add	r1, r1, #8
 __chunks_loop:
 	subs	r2, r2, #1
 	bmi	__chunks_done
@@ -145,6 +145,7 @@ __chunks_done:
 
 proccess_plain:
 	stmfd	sp!, {r3-r7,lr}
+	ldr	r1, [r1]
 __qwords_loop:
 	cmp	r2, #0x10
 	blo	__qwords_done

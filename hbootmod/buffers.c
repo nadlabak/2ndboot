@@ -14,36 +14,40 @@
 
 #pragma pack(push, 1)
 struct abstract_buffer {
+	uint16_t tag;
+	uint8_t type;
+	uint8_t attrs;
 	uint32_t size;
 	uint32_t checksum;
-	uint32_t tag;
 };
 struct plain_buffer {
-	uint32_t size;
-	uint32_t checksum;
-	uint32_t tag;
+	struct abstract_buffer a;
 	void *data;
 };
 struct scattered_buffer {
-	uint32_t size;
-	uint32_t checksum;
-	uint32_t tag;
+	struct abstract_buffer a;
 	uint32_t chunk_size;
 	uint32_t allocated_chunks;
 	uint32_t chunks[0];
 };
 #pragma pack(pop)
 
+#define ABSTRACT(p) ((struct abstract_buffer*)p)
+#define BUFFER_TAG(p) (ABSTRACT(p)->tag)
+#define BUFFER_TYPE(p) (ABSTRACT(p)->type)
+#define BUFFER_ATTRS(p) (ABSTRACT(p)->attrs)
+#define BUFFER_SIZE(p) (ABSTRACT(p)->size)
+#define BUFFER_CHECKSUM(p) (ABSTRACT(p)->checksum)
+
 struct generic_buffer {
 	union {
 		struct plain_buffer *plain;
 		struct scattered_buffer *scattered;
+		struct nand_buffer *nand;
 		struct abstract_buffer *abstract;
 
 		void *generic;
 	} container;
-	int type;
-	int checksumed;
 	spinlock_t buf_lock;
 };
 
@@ -146,6 +150,17 @@ void free_high_page(void *p) {
 	return free_high_pages(p, 0);
 }
 
+static void init_abstract_buffer(struct abstract_buffer *ab, uint16_t tag, uint8_t type, uint8_t attrs, uint32_t size) {
+	ab->tag = tag;
+	ab->type = type;
+	ab->attrs = attrs;
+	ab->size = size;
+
+	if (attrs & BUFFER_CHECKSUMED) {
+		crc32_init_ctx(&BUFFER_CHECKSUM(ab));
+	}
+}
+
 static void free_scattered_buffer(struct scattered_buffer *sc) {
 	uint32_t i;
 	for (i = 0; i < sc->allocated_chunks; ++i) {
@@ -169,7 +184,6 @@ static struct scattered_buffer *allocate_scattered_buffer(uint32_t bufsize) {
 		return NULL;
 	}
 
-	sc->size = bufsize;
 	sc->allocated_chunks = 0;
 	sc->chunk_size = CHUNK_SIZE;
 	while (bufsize > 0) {
@@ -190,17 +204,17 @@ err:
 	return NULL;
 }
 
-static int append_scattered_buffer(struct scattered_buffer *sc, const char __user *data, size_t size, loff_t pos, uint32_t *checksum) {
+static int append_scattered_buffer(struct scattered_buffer *sc, const char __user *data, size_t size, loff_t pos) {
 	size_t written = 0;
 	size_t cur_size = 0;
 	int chunk;
 	int chunk_off;
 
-	if (pos >= sc->size) {
+	if (pos >= BUFFER_SIZE(sc)) {
 		return -EINVAL;
 	}
-	if (sc->size < pos + size) {
-		size = sc->size - pos;
+	if (BUFFER_SIZE(sc) < pos + size) {
+		size = BUFFER_SIZE(sc) - pos;
 	}
 
 	chunk = (uint32_t)pos / sc->chunk_size;
@@ -208,8 +222,8 @@ static int append_scattered_buffer(struct scattered_buffer *sc, const char __use
 	while (written < size) {
 		cur_size = min(size, sc->chunk_size - chunk_off);
 		copy_from_user((char*)sc->chunks[chunk] + chunk_off, data + written, cur_size);
-		if (checksum) {
-			crc32_update(checksum, (const uint8_t*)sc->chunks[chunk] + chunk_off, cur_size);
+		if (BUFFER_ATTRS(sc) & BUFFER_CHECKSUMED) {
+			crc32_update(&BUFFER_CHECKSUM(sc), (const uint8_t*)sc->chunks[chunk] + chunk_off, cur_size);
 		}
 		written += cur_size;
 		chunk++;
@@ -225,7 +239,6 @@ static struct plain_buffer *allocate_plain_buffer(uint32_t bufsize) {
 	if (pb == NULL) {
 		return NULL;
 	}
-	pb->size = bufsize;
 	pb->data = (void*)get_high_mem(bufsize);
 	if (pb->data == 0) {
 		free_high_mem(pb);
@@ -239,23 +252,21 @@ static void free_plain_buffer(struct plain_buffer *pb) {
 	free_high_mem(pb);
 }
 
-static int append_plain_buffer(struct plain_buffer *pb, const char __user *data, size_t size, loff_t pos, uint32_t *checksum) {
-	(void)checksum;
-
-	if (pos >= pb->size) {
+static int append_plain_buffer(struct plain_buffer *pb, const char __user *data, size_t size, loff_t pos) {
+	if (pos >= BUFFER_SIZE(pb)) {
 		return -EINVAL;
 	}
-	if (pb->size < pos + size) {
-		size = pb->size - pos;
+	if (BUFFER_SIZE(pb) < pos + size) {
+		size = BUFFER_SIZE(pb) - pos;
 	}
 	copy_from_user((char*)pb->data + pos, data, size);
-	if (checksum) {
-		crc32_update(checksum, (char*)pb->data + pos, size);
+	if (BUFFER_ATTRS(pb) & BUFFER_CHECKSUMED) {
+		crc32_update(&BUFFER_CHECKSUM(pb), (char*)pb->data + pos, size);
 	}
 	return (int)size;
 }
 
-void free_typed_buffer(void *buffer, int type) {
+void free_typed_buffer(void *buffer, uint8_t type) {
 	switch (type) {
 		case BUFFER_PLAIN:
 			free_plain_buffer((struct plain_buffer*)buffer);
@@ -265,7 +276,7 @@ void free_typed_buffer(void *buffer, int type) {
 			break;
 	}
 }
-int allocate_buffer(int type, int checksumed, uint32_t bufsize, uint32_t tag) {
+int allocate_buffer(uint16_t tag, uint8_t type, uint8_t attrs, uint32_t bufsize) {
 	struct generic_buffer *buf;
 	void *data;
 	int handle;
@@ -289,13 +300,8 @@ int allocate_buffer(int type, int checksumed, uint32_t bufsize, uint32_t tag) {
 		free_typed_buffer(data, type);
 		return INVALID_BUFFER_HANDLE;
 	}
-	buf->type = type;
-	buf->checksumed = checksumed;
+	init_abstract_buffer(ABSTRACT(data), tag, type, attrs, bufsize);
 	buf->container.generic = data;
-	if (buf->checksumed) {
-		crc32_init_ctx(&buf->container.abstract->checksum);
-	}
-	buf->container.abstract->tag = tag;
 	put_buffer(buf);
 	printk("%s buffer of size %u allocated\n", (type == BUFFER_PLAIN?"plain":"scattered"), bufsize);
 	return handle;
@@ -303,7 +309,7 @@ int allocate_buffer(int type, int checksumed, uint32_t bufsize, uint32_t tag) {
 
 int free_buffer(int handle) {
 	struct generic_buffer *buf;
-	int type;
+	uint8_t type;
 	void *data;
 
 	buf = get_buffer(handle);
@@ -311,7 +317,7 @@ int free_buffer(int handle) {
 		return -1;
 	}
 	data = buf->container.generic;
-	type = buf->type;
+	type = BUFFER_TYPE(buf->container.abstract);
 	buf->container.generic = NULL;
 	put_buffer(buf);
 
@@ -328,24 +334,18 @@ int select_buffer(int handle) {
 
 int buffer_append_userdata(const char __user *data, size_t size, loff_t *ppos) {
 	struct generic_buffer *buf;
-	uint32_t *checksum_ctx;
 	int ret;
 
 	buf = get_buffer(buffers.handle);
 	if (buf == NULL) {
 		return -EINVAL;
 	}
-	if (buf->checksumed) {
-		checksum_ctx = &buf->container.abstract->checksum;
-	} else {
-		checksum_ctx = NULL;
-	}
-	switch (buf->type) {
+	switch (BUFFER_TYPE(buf->container.abstract)) {
 		case BUFFER_PLAIN:
-			ret = append_plain_buffer(buf->container.plain, data, size, *ppos, checksum_ctx);
+			ret = append_plain_buffer(buf->container.plain, data, size, *ppos);
 			break;
 		case BUFFER_SCATTERED:
-			ret = append_scattered_buffer(buf->container.scattered, data, size, *ppos, checksum_ctx);
+			ret = append_scattered_buffer(buf->container.scattered, data, size, *ppos);
 			break;
 		default:
 			ret = -EINVAL;
@@ -366,13 +366,13 @@ bootfunc_t get_bootentry(uint32_t *bootsize, int handle) {
 	if (buf == NULL) {
 		return NULL;
 	}
-	if (buf->type != BUFFER_PLAIN ||
-	    buf->container.plain->size < 4 ||
+	if (BUFFER_TYPE(buf->container.abstract) != BUFFER_PLAIN ||
+	    BUFFER_SIZE(buf->container.abstract) < 4 ||
 	    ((uint32_t)buf->container.plain->data) & 0x3) {
 		ret =  NULL;
 	} else {
 		ret = (bootfunc_t)buf->container.plain->data;
-		*bootsize = buf->container.plain->size;
+		*bootsize = BUFFER_SIZE(buf->container.plain);
 	}
 	put_buffer(buf);
 	return ret;
@@ -389,13 +389,10 @@ void *get_bootlist(uint32_t *listsize, int handle) {
 
 		buf = &buffers.bufs[i];
 		if (handle != i && buf->container.generic != NULL) {
-			if (buf->checksumed) {
-				crc32_final(&buf->container.abstract->checksum);
+			if (BUFFER_ATTRS(buf->container.abstract) & BUFFER_CHECKSUMED) {
+				crc32_final(&BUFFER_CHECKSUM(buf->container.abstract));
 			}
 			list[j] = (uint32_t)buf->container.generic;
-			if (buf->type == BUFFER_SCATTERED) {
-				list[j] |= 1;
-			}
 			j++;
 		}
 	}
