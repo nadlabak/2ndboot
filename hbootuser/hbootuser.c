@@ -52,7 +52,7 @@ int try_file(const char *path, size_t *size) {
 int allocate_buffer(int type, int checksumed, size_t size, uint32_t tag) {
 	struct hboot_buffer_req req;
 	int ret;
-	req.tag = (uint16_t)tag;
+	req.tag = (uint8_t)tag;
 	req.attrs = 0;
 	if (checksumed) {
 		req.attrs |= BUFFER_CHECKSUMED;

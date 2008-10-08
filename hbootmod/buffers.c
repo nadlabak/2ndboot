@@ -14,7 +14,8 @@
 
 #pragma pack(push, 1)
 struct abstract_buffer {
-	uint16_t tag;
+	uint8_t tag;
+	uint8_t status;
 	uint8_t type;
 	uint8_t attrs;
 	uint32_t size;
@@ -150,8 +151,9 @@ void free_high_page(void *p) {
 	return free_high_pages(p, 0);
 }
 
-static void init_abstract_buffer(struct abstract_buffer *ab, uint16_t tag, uint8_t type, uint8_t attrs, uint32_t size) {
+static void init_abstract_buffer(struct abstract_buffer *ab, uint8_t tag, uint8_t type, uint8_t attrs, uint32_t size) {
 	ab->tag = tag;
+	ab->status = 0;
 	ab->type = type;
 	ab->attrs = attrs;
 	ab->size = size;
@@ -276,7 +278,7 @@ void free_typed_buffer(void *buffer, uint8_t type) {
 			break;
 	}
 }
-int allocate_buffer(uint16_t tag, uint8_t type, uint8_t attrs, uint32_t bufsize) {
+int allocate_buffer(uint8_t tag, uint8_t type, uint8_t attrs, uint32_t bufsize) {
 	struct generic_buffer *buf;
 	void *data;
 	int handle;

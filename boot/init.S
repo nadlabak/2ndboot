@@ -76,7 +76,7 @@ __buffers_loop:
 	subs	r6, r6, #1
 	bmi	__buffers_end
 	ldr	r4, [r3], #4
-	ldrh	r0, [r4]
+	ldrb	r0, [r4]
 	bl	find_tag
 	cmp	r0, #0
 	movne	r1, r4

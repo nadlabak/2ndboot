@@ -10,7 +10,7 @@ uint32_t get_high_pages(unsigned int order);
 void free_high_pages(void *p, unsigned int order);
 uint32_t get_high_page(void);
 void free_high_page(void *p);
-int allocate_buffer(uint16_t tag, uint8_t type, uint8_t attrs, uint32_t size);
+int allocate_buffer(uint8_t tag, uint8_t type, uint8_t attrs, uint32_t size);
 int free_buffer(int handle);
 int select_buffer(int handle);
 int buffer_append_userdata(const char __user *data, size_t len, loff_t *ppos);
@@ -23,7 +23,7 @@ void *get_bootlist(uint32_t *listsize, int handle);
 #endif
 
 struct hboot_buffer_req {
-	uint16_t tag;
+	uint8_t tag;
 	uint8_t type;
 	uint8_t attrs;
 	uint32_t size;
