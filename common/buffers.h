@@ -36,14 +36,12 @@ struct abstract_buffer {
 
 #define B_ATTR_VERIFY    (1 << 0)
 
-#define IMG_FIRST_TAG		1
+#define IMG_LINUX        (1)
+#define IMG_INITRAMFS    (2)
+#define IMG_MOTFLATTREE  (3)
+#define IMG_CMDLINE      (4)
+#define IMG_USBFW        (5)
 
-#define IMG_LINUX		1
-#define IMG_INITRAMFS		2
-#define IMG_MOTFLATTREE		3
-#define IMG_CMDLINE		4
-#define IMG_USBFW		5
-
-#define IMG_LAST_TAG		IMG_USBFW
+#define IMG_LAST_TAG     IMG_USBFW
 
 #endif // __BUFFERS_H__
