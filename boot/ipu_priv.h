@@ -39,8 +39,6 @@
 
 #include "types.h"
 // #include "ipu_alloc.h"
-#define bool int
-#define u32 uint32_t
 #if defined(CONFIG_MOT_FEAT_IPU_MEM_ADDR)
 extern unsigned long ipu_mem_addr;	/* dynamically defined in setup.c */ 
 extern unsigned long ipu_mem_size;

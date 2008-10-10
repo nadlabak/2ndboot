@@ -22,10 +22,6 @@
 
 #include "types.h"
 
-typedef uint8_t u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-
 #define COMMAND_LINE_SIZE 1024
 
 /* Magic number at the beginning of the serialized device tree. */
