@@ -45,12 +45,12 @@ __with_mmu:
 	
 	ldr	sp, sp_svc
 	str	r14, [sp, #-4]!
-	mov	r3, r0
+	mov	r5, r0
 	mov	r6, r1
 __buffers_loop:
 	subs	r6, r6, #1
 	bmi	__buffers_end
-	ldr	r4, [r3], #4
+	ldr	r4, [r5], #4
 	ldrb	r0, [r4]
 	bl	find_tag
 	cmp	r0, #0
@@ -61,16 +61,15 @@ __buffers_end:
 	b	__turn_off_mmu
 
 find_tag:
-	stmfd	sp!, {r1, lr}
 	cmp	r0, #IMG_LAST_TAG
 	ldrls	r1, p_tags_table
 	addls	r1, r1, r0, lsl #5     @ each entry is 8-words long
 	movhi	r1, #0
 	mov	r0, r1
-	ldmfd	sp!, {r1, pc}
+	bx	lr
 
 proccess_buffer:
-	stmfd	sp!, {r1-r4,lr}
+	stmfd	sp!, {r4,lr}
 
 	ldmia	r1!, {r2-r4}
 	stmia	r0, {r2-r4}
@@ -92,7 +91,7 @@ __scatt:
 @	nop
 	b	__final
 __final:
-	ldmfd	sp!, {r1-r4,pc}
+	ldmfd	sp!, {r4,pc}
 
 proccess_scattered:
 	stmfd	sp!, {r4-r12,lr}
@@ -105,8 +104,8 @@ __chunks_loop:
 	ldr	r4, [r1], #4           @ new chunk
 	mov	r5, r3                 @ chunk size
 __copy_loop:
-	ldmia	r4!, {r6-r12,r14}
-	stmia	r0!, {r6-r12,r14}
+	ldmia	r4!, {r6-r12,lr}
+	stmia	r0!, {r6-r12,lr}
 	subs 	r5, r5, #0x20
 	bne	__copy_loop
 __copy_done:
@@ -115,31 +114,31 @@ __chunks_done:
 	ldmfd	sp!, {r4-r12,pc}
 
 proccess_plain:
-	stmfd	sp!, {r3-r7,lr}
+	stmfd	sp!, {r4-r6,lr}
 	ldr	r1, [r1]
 __qwords_loop:
 	cmp	r2, #0x10
 	blo	__qwords_done
-	ldmia	r1!, {r4-r7}
-	stmia	r0!, {r4-r7}
+	ldmia	r1!, {r3-r6}
+	stmia	r0!, {r3-r6}
 	sub	r2, r2, #0x10
 	b	__qwords_loop
 __qwords_done:
 	tst	r2, #0x8
-	ldmneia	r1!, {r4,r5}
-	stmneia	r0!, {r4,r5}
+	ldmneia	r1!, {r3,r4}
+	stmneia	r0!, {r3,r4}
 
 	tst	r2, #0x4
-	ldrne	r4, [r1], #4
-	strne	r4, [r0], #4
+	ldrne	r3, [r1], #4
+	strne	r3, [r0], #4
 	
 	movs	r2, r2, lsl #31
-	ldrcsh	r4, [r1], #2
-	strcsh	r4, [r0], #2
-	ldrmib	r4, [r1], #1
-	strmib	r4, [r0], #1
+	ldrcsh	r3, [r1], #2
+	strcsh	r3, [r0], #2
+	ldrmib	r3, [r1], #1
+	strmib	r3, [r0], #1
 	
-	ldmfd	sp!, {r3-r7,pc}
+	ldmfd	sp!, {r4-r6,pc}
 	
 __turn_off_mmu:
 	ldr	r0, [sp], #4
