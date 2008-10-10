@@ -55,7 +55,7 @@ int allocate_buffer(int type, int checksumed, size_t size, uint32_t tag) {
 	req.tag = (uint8_t)tag;
 	req.attrs = 0;
 	if (checksumed) {
-		req.attrs |= BUFFER_CHECKSUMED;
+		req.attrs |= B_ATTR_VERIFY;
 	}
 	req.type = (uint8_t)type;
 	req.size = (uint32_t)size;
@@ -154,14 +154,14 @@ int main(int argc, char **argv) {
 		int checksumed;
 
 		if (descs[i].tag == 0) {
-			type = BUFFER_PLAIN;
+			type = B_TYPE_PLAIN;
 			checksumed = 0;
 			loader = &descs[i];
 		} else {
 			if (descs[i].size < 2*4096) {
-				type = BUFFER_PLAIN;
+				type = B_TYPE_PLAIN;
 			} else {
-				type = BUFFER_SCATTERED;
+				type = B_TYPE_SCATTERED;
 			}
 			checksumed = 1;
 		}

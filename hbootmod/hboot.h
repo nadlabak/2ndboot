@@ -1,6 +1,8 @@
 #ifndef HBOOT_H
 #define HBOOT_H
 
+#include "buffers.h"
+
 #ifdef __KERNEL__
 #include <linux/types.h>
 
@@ -30,11 +32,6 @@ struct hboot_buffer_req {
 };
 
 #define MAX_BUFFERS_COUNT 8
-
-#define BUFFER_PLAIN 0
-#define BUFFER_SCATTERED 1
-
-#define BUFFER_CHECKSUMED 1
 
 #define INVALID_BUFFER_HANDLE ((int)-1)
 #define HBOOT_ALLOCATE_BUFFER		0

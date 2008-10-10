@@ -17,7 +17,7 @@ OBJCOPY		 = $(PREFIX)-objcopy
 
 LD_SCRIPT	:= ld-script
 ASM_OBJS	:= init.o
-C_OBJS		:= main.o console.o vsprintf.o printf.o font_8x8.o memstr.o font.o gpt.o ipu.o atag.o crc32.o hw_misc.o mu.o dsp.o nfc.o
+C_OBJS		:= main.o images.o console.o vsprintf.o printf.o font_8x8.o memstr.o font.o gpt.o ipu.o atag.o crc32.o hw_misc.o mu.o dsp.o nfc.o
 OBJS		:= $(ASM_OBJS) $(C_OBJS)
 
 VERSION		 = $(shell hg -q id 2>/dev/null || echo unknown)

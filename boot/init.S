@@ -1,3 +1,4 @@
+#include "buffers.h"
 .macro barrier, reg
 	mcr p15, 0, \reg, c7, c10, 4
 .endm
@@ -14,10 +15,11 @@
 .endm
 
 /* Now we are running with MMU enabled _and_ phys != virt!
- * r0 - pointer to set of scattered buffers.
+v * r0 - pointer to set of scattered buffers.
  * r1 - count of buffers
  * r2 - pointer to new trnaslation table
  */
+.align 4
 	cpsid   ifa
 	sub	r14, r15, #0xc         @ virt addr of entry point
 	sub	r14, r14, #0x30000000
@@ -33,43 +35,18 @@
 	sub	pc, r2, #0x30000000
 
 	b	__with_mmu             @ at that place, pc is physical.
-tags_table:
-@	kernel image
-	.word 0x1                      @ tag
-	.word 0x90008000	       @ target
-	.word 0x0                      @ size
-	.word 0x0                      @ cheksum
-@	initramfs
-	.word 0x2
-	.word 0x90800000
-	.word 0x0
-	.word 0x0
-@	motflattree
-	.word 0x3
-	.word 0x91000000
-	.word 0x0
-	.word 0x0
-@	cmdline
-	.word 0x4
-	.word 0x91100000
-	.word 0x0
-	.word 0x0
-@	usbfw
-	.word 0x5
-	.word 0x91110000
-	.word 0x0
-	.word 0x0
-@	ending zero
-	.word 0x0
-	.word 0x0
-	.word 0x0
-	.word 0x0
+p_tags_table:
+	.word buffers_list
 virt_sp:
 	.word 0xc2000000
 __with_mmu:
+	adr	r2, p_tags_table
+	ldr	r3, p_tags_table
+	add	r3, r3, r14
+	str	r3, [r2]
+	
 	ldr	sp, virt_sp
 	str	r14, [sp, #-4]!
-
 	mov	r3, r0
 	mov	r6, r1
 __buffers_loop:
@@ -86,42 +63,38 @@ __buffers_end:
 	b	__turn_off_mmu
 
 find_tag:
-	stmfd	sp!, {r1, r2, lr}
-	adr	r1, tags_table
-__tags_loop:
-	ldr	r2, [r1]
-	cmp	r2, #0
-	moveq	r1, #0
-	cmpne	r2, r0
-	moveq	r0, r1
-	beq	__tags_end
-	add	r1, r1, #0x10
-	b	__tags_loop
-__tags_end:
-	ldmfd	sp!, {r1, r2, pc}
+	stmfd	sp!, {r1, lr}
+	cmp	r0, #IMG_LAST_TAG
+	ldrls	r1, p_tags_table
+	addls	r1, r1, r0, lsl #5     @ each entry is 8-words long
+	movhi	r1, #0
+	mov	r0, r1
+	ldmfd	sp!, {r1, pc}
 
 proccess_buffer:
-	stmfd	sp!, {r1-r3,lr}
+	stmfd	sp!, {r1-r4,lr}
 
-	ldr	r2, [r1, #0x8]         @ checksum
-	str	r2, [r0, #0xc]
-	ldr	r2, [r1, #0x4]         @ size
-	str	r2, [r0, #0x8]
-	ldr	r0, [r0, #0x4]         @ target
-	ldrb	r3, [r1, #0x2]         @ type
-	add	r1, r1, #0xc           @ non-abstract part
-	cmp	r3, #1                 @ max type
-	bgt	__final
-	add	pc, pc, r3, lsl #3
+	ldmia	r1!, {r2-r4}
+	stmia	r0, {r2-r4}
+	str	r1, [r0, #0xc]         @ non-abstract part
+	mov	r4, #B_STAT_COMPLETED
+	strb	r4, [r0, #1]           @ state
+	uxtb	r4, r2, ror #16        @ type
+	mov	r2, r3
+	ldr	r0, [r0, #0x10]        @ target
+	cmp	r4, #1                 @ max type
+	bhi	__final
+	add	pc, pc, r4, lsl #3
 	nop
 __plain:
 	bl	proccess_plain
 	b	__final
 __scatt:
 	bl	proccess_scattered
+@	nop
 	b	__final
 __final:
-	ldmfd	sp!, {r1-r3,pc}
+	ldmfd	sp!, {r1-r4,pc}
 
 proccess_scattered:
 	stmfd	sp!, {r4-r12,lr}
@@ -269,7 +242,6 @@ _main:
 
 	bl     fixup_got
 	bl     clean_bss
-	adr    r1, tags_table
 	bl     main
 forever:
 	.word 0xeafffffe
