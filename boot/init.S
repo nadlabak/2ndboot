@@ -15,9 +15,9 @@
 .endm
 
 /* Now we are running with MMU enabled _and_ phys != virt!
-v * r0 - pointer to set of scattered buffers.
- * r1 - count of buffers
- * r2 - pointer to new trnaslation table
+ * r0 - pointer to set of buffers.
+ * r1 - count of buffers.
+ * r2 - pointer to new trnaslation table.
  */
 .align 4
 	cpsid   ifa
@@ -178,10 +178,11 @@ l2_cln:
 	mcr     p15, 0, r4, c8, c6, 0  @ invalidate DTLB
 
 /* Now MMU is turned off
- * r0 - physical address of boot_base
+ * r0 - physical address of boot image base
  */
 _start: b _main
-/* r0 - image base */
+
+/* r0 - boot image base */
 fixup_got:
 	ldr     r4, got_start
 	ldr     r5, got_end
@@ -215,7 +216,6 @@ got_start: .word __got_start__
 got_end:   .word __got_end__
 bss_start: .word __bss_start__
 bss_end:   .word __bss_end__
-boot_size: .word __boot_size__
 sp_svc: .word 0x92000000
 sp_sys: .word 0x91f80000
 sp_und: .word 0x91f7f000
@@ -239,5 +239,5 @@ _main:
 	bl     clean_bss
 	bl     main
 forever:
-	.word 0xeafffffe
+	b	forever
 .global _start
