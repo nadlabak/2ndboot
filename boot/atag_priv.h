@@ -25,6 +25,7 @@
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
+
 #define COMMAND_LINE_SIZE 1024
 
 /* Magic number at the beginning of the serialized device tree. */
@@ -340,15 +341,6 @@ struct tag {
 	} u;
 };
 
-struct tagtable {
-	u32 tag;
-	int (*parse)(const struct tag *);
-};
-
-#define __tag __attribute_used__ __attribute__((__section__(".taglist")))
-#define __tagtable(tag, fn) \
-static struct tagtable __tagtable_##fn __tag = { tag, fn }
-
 #define tag_member_present(tag,member)				\
 	((unsigned long)(&((struct tag *)0L)->member + 1)	\
 		<= (tag)->hdr.size * 4)
@@ -358,35 +350,5 @@ static struct tagtable __tagtable_##fn __tag = { tag, fn }
 
 #define for_each_tag(t,base)		\
 	for (t = base; t->hdr.size; t = tag_next(t))
-
-/*
- * Memory map description
- */
-#ifdef CONFIG_ARCH_LH7A40X
-# define NR_BANKS 16
-#else
-# define NR_BANKS 8
-#endif
-
-struct meminfo {
-	int nr_banks;
-	struct {
-		unsigned long start;
-		unsigned long size;
-		int           node;
-	} bank[NR_BANKS];
-};
-
-/*
- * Early command line parameters.
- */
-struct early_params {
-	const char *arg;
-	void (*fn)(char **p);
-};
-
-#define __early_param(name,fn)					\
-static struct early_params __early_##fn __attribute_used__	\
-__attribute__((__section__("__early_param"))) = { name, fn }
 
 #endif
