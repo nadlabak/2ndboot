@@ -35,11 +35,11 @@ v * r0 - pointer to set of scattered buffers.
 	sub	pc, r2, #0x30000000
 
 	b	__with_mmu             @ at that place, pc is physical.
-p_tags_table:
+p_buffers_list:
 	.word buffers_list
 __with_mmu:
-	adr	r2, p_tags_table
-	ldr	r3, p_tags_table
+	adr	r2, p_buffers_list
+	ldr	r3, p_buffers_list
 	add	r3, r3, r14
 	str	r3, [r2]
 	
@@ -62,7 +62,7 @@ __buffers_end:
 
 find_tag:
 	cmp	r0, #IMG_LAST_TAG
-	ldrls	r1, p_tags_table
+	ldrls	r1, p_buffers_list
 	addls	r1, r1, r0, lsl #5     @ each entry is 8-words long
 	movhi	r1, #0
 	mov	r0, r1
