@@ -82,11 +82,15 @@ proccess_buffer:
 	bhi	__final
 	uxtb	r4, r2, ror #16        @ type
 	mov	r2, r3
+	mov	r3, r4
 	ldr	r0, [r0, #0x10]        @ target
-	cmp	r4, #1                 @ max type
+	cmp	r3, #1                 @ max type
 	bhi	__final
-	add	pc, pc, r4, lsl #3
-	nop
+	ldr	r3, [pc, r3, lsl #2]
+	add	pc, pc, r3
+__jtable:
+	.word	__plain - __jtable - 0x4
+	.word	__scatt - __jtable - 0x4
 __plain:
 	bl	proccess_plain
 	b	__final
