@@ -2,16 +2,16 @@ DESTDIR		 = /mmc/mmca1/ldr
 DESTHOST	 = 192.168.16.2
 
 PREFIX		 = /mnt/hd/e8-gcc/bin/arm-linux-gnueabi
-CFLAGS		:= -fno-stack-protector -fno-builtin -nostdinc -fPIC
+CFLAGS		:= -fno-stack-protector -fno-builtin -nostdinc -fPIC -D__LOADER__
 LDFLAGS		:= -static -nostdlib -fPIC
-ASFLAGS		:= -meabi=4
+ASFLAGS		:= -c -x assembler-with-cpp -D__LOADER__
 LIBS		:= -lgcc
 
 ELF_TARGET	 = boot.elf
 RAW_TARGET	 = boot
 
 CC		 = $(PREFIX)-gcc
-AS		 = $(PREFIX)-as
+AS		 = $(PREFIX)-gcc
 LD 		 = $(PREFIX)-gcc
 OBJCOPY		 = $(PREFIX)-objcopy
 
