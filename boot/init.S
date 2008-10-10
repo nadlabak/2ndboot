@@ -37,15 +37,13 @@ v * r0 - pointer to set of scattered buffers.
 	b	__with_mmu             @ at that place, pc is physical.
 p_tags_table:
 	.word buffers_list
-virt_sp:
-	.word 0xc2000000
 __with_mmu:
 	adr	r2, p_tags_table
 	ldr	r3, p_tags_table
 	add	r3, r3, r14
 	str	r3, [r2]
 	
-	ldr	sp, virt_sp
+	ldr	sp, sp_svc
 	str	r14, [sp, #-4]!
 	mov	r3, r0
 	mov	r6, r1
@@ -219,15 +217,13 @@ got_end:   .word __got_end__
 bss_start: .word __bss_start__
 bss_end:   .word __bss_end__
 boot_size: .word __boot_size__
-sp_svc:	.word 0x92000000
+sp_svc: .word 0x92000000
 sp_sys: .word 0x91f80000
 sp_und: .word 0x91f7f000
 sp_abt: .word 0x91f7e000
 sp_fiq: .word 0x91f7d000
 sp_irq: .word 0x91f7c000
 _main:
-	cps     #0x13 @ supervisor
-	ldr     sp, sp_svc
 	cps     #0x1f @ system
 	ldr     sp, sp_sys
 	cps     #0x1b @ undef
