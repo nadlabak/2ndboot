@@ -93,14 +93,41 @@ __scatt:
 __final:
 	ldmfd	sp!, {r4,pc}
 
+memcpy:
+	stmfd	sp!, {r4-r10,lr}
+__dqwords_loop:
+	cmp	r2, #0x20
+	blo	__dqwords_done
+	ldmia	r1!, {r3-r10}
+	stmia	r0!, {r3-r10}
+	subs	r2, r2, #0x20
+	beq	__memcpy_done
+	b	__dqwords_loop
+__dqwords_done:	
+	movs	r2, r2, lsl #28
+	ldmcsia	r1!, {r3-r6}
+	stmcsia	r0!, {r3-r6}
+	ldmmiia	r1!, {r3-r4}
+	stmmiia	r0!, {r3-r4}
+
+	movs	r2, r2, lsl #2
+	ldrcs	r3, [r1], #4
+	strcs	r3, [r0], #4
+	ldrmih	r3, [r1], #2
+	strmih	r3, [r0], #2
+	cmp	r2, #0
+	ldrneb	r3, [r1], #1
+	strneb	r3, [r0], #1
+__memcpy_done:
+	ldmfd	sp!, {r4-r10,pc}
+
 proccess_scattered:
 	stmfd	sp!, {r4-r12,lr}
-	ldr	r2, [r1, #0x4]         @ chunks count
 	ldr	r3, [r1]               @ chunk size
 	add	r1, r1, #8
 __chunks_loop:
-	subs	r2, r2, #1
-	bmi	__chunks_done
+	subs	r2, r2, r3
+	bmi	__copy_done
 	ldr	r4, [r1], #4           @ new chunk
 	mov	r5, r3                 @ chunk size
 __copy_loop:
@@ -108,37 +135,17 @@ __copy_loop:
 	stmia	r0!, {r6-r12,lr}
 	subs 	r5, r5, #0x20
 	bne	__copy_loop
-__copy_done:
 	b	__chunks_loop
-__chunks_done:
+__copy_done:
+	adds	r2, r2, r3
+	ldrne	r1, [r1]
+	blne	memcpy
+__scat_final:
 	ldmfd	sp!, {r4-r12,pc}
 
 proccess_plain:
-	stmfd	sp!, {r4-r6,lr}
 	ldr	r1, [r1]
-__qwords_loop:
-	cmp	r2, #0x10
-	blo	__qwords_done
-	ldmia	r1!, {r3-r6}
-	stmia	r0!, {r3-r6}
-	sub	r2, r2, #0x10
-	b	__qwords_loop
-__qwords_done:
-	tst	r2, #0x8
-	ldmneia	r1!, {r3,r4}
-	stmneia	r0!, {r3,r4}
-
-	tst	r2, #0x4
-	ldrne	r3, [r1], #4
-	strne	r3, [r0], #4
-	
-	movs	r2, r2, lsl #31
-	ldrcsh	r3, [r1], #2
-	strcsh	r3, [r0], #2
-	ldrmib	r3, [r1], #1
-	strmib	r3, [r0], #1
-	
-	ldmfd	sp!, {r4-r6,pc}
+	b	memcpy
 	
 __turn_off_mmu:
 	ldr	r0, [sp], #4
