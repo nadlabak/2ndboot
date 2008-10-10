@@ -123,6 +123,8 @@ __memcpy_done:
 
 proccess_scattered:
 	stmfd	sp!, {r4-r12,lr}
+	cmp	r2, #0
+	ble	__scat_final
 	ldr	r3, [r1]               @ chunk size
 	add	r1, r1, #8
 __chunks_loop:
