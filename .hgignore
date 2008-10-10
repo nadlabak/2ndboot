@@ -1,0 +1,11 @@
+syntax: glob
+*.o
+*.ko
+*~
+#*
+boot/boot
+boot/boot.elf
+hbootuser/hbootuser
+hbootmod/.*.cmd
+hbootmod/.tmp_versions*
+hbootmod/hbootmod.mod.c
