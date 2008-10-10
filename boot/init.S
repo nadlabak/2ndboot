@@ -74,8 +74,12 @@ proccess_buffer:
 	ldmia	r1!, {r2-r4}
 	stmia	r0, {r2-r4}
 	str	r1, [r0, #0xc]         @ non-abstract part
-	mov	r4, #B_STAT_COMPLETED
+	ldr	r4, [r0, #0x14]        @ maxsize
+	cmp	r3, r4
+	movhi	r4, #B_STAT_OVERFLOW
+	movls	r4, #B_STAT_COMPLETED
 	strb	r4, [r0, #1]           @ state
+	bhi	__final
 	uxtb	r4, r2, ror #16        @ type
 	mov	r2, r3
 	ldr	r0, [r0, #0x10]        @ target
@@ -88,7 +92,6 @@ __plain:
 	b	__final
 __scatt:
 	bl	proccess_scattered
-@	nop
 	b	__final
 __final:
 	ldmfd	sp!, {r4,pc}

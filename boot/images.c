@@ -7,24 +7,30 @@ struct buffer_handle {
   struct abstract_buffer abstract;
   void *rest;
   addr_t dest;
-  uint32_t reserved[3];
+  uint32_t maxsize;
+  uint32_t reserved[2];
 };
 
 struct buffer_handle buffers_list[IMG_LAST_TAG+1] = {
   [IMG_LINUX] = {
     .dest = 0x90008000,
+    .maxsize = 2*1024*1024,
   },
   [IMG_INITRAMFS] = {
     .dest = 0x90800000,
+    .maxsize = 2*1024*1024,
   },
   [IMG_MOTFLATTREE] = {
     .dest = 0x91000000,
+    .maxsize = 1*1024*1024,
   },
   [IMG_CMDLINE] = {
     .dest = 0x91100000,
+    .maxsize = 1024,
   },
   [IMG_USBFW] = {
     .dest = 0x91110000,
+    .maxsize = 16*1024,
   },
 };
 
@@ -52,7 +58,7 @@ void image_complete() {
     if ((ab->state == B_STAT_COMPLETED) &&
 	(ab->attrs & B_ATTR_VERIFY)) {
       if (ab->checksum != crc32(buffers_list[i].dest, (size_t)ab->size)) {
-	ab->state = B_STAT_ERROR;
+	ab->state = B_STAT_CRCERROR;
       }
     }
   }
@@ -78,8 +84,10 @@ void image_dump_stats() {
       c = '*'; break;
     case B_STAT_COMPLETED:
       c = '+'; break;
-    case B_STAT_ERROR:
+    case B_STAT_CRCERROR:
       c = '!'; break;
+    case B_STAT_OVERFLOW:
+      c = '^'; break;
     default:
       c = '?'; break;
     }
