@@ -8,7 +8,8 @@ struct buffer_handle {
   void *rest;
   addr_t dest;
   uint32_t maxsize;
-  uint32_t reserved[2];
+  uint32_t attrs;
+  uint32_t reserved[1];
 };
 
 struct buffer_handle buffers_list[IMG_LAST_TAG+1] = {
@@ -88,6 +89,8 @@ void image_dump_stats() {
       c = '!'; break;
     case B_STAT_OVERFLOW:
       c = '^'; break;
+    case B_STAT_ERROR:
+      c = '#'; break;
     default:
       c = '?'; break;
     }

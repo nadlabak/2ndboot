@@ -28,6 +28,7 @@ struct abstract_buffer {
 #define B_STAT_COMPLETED (2)
 #define B_STAT_CRCERROR  (3)
 #define B_STAT_OVERFLOW  (4)
+#define B_STAT_ERROR     (5)
 
 #endif // defined(__KERNEL__) || defined(__LOADER__)
 

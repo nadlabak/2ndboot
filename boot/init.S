@@ -113,36 +113,50 @@ find_tag:
 	mov	r0, r1
 	bx	lr
 
-proccess_buffer:
-	stmfd	sp!, {r4,lr}
+/*
+   r0 - destination
+   r1 - buffer handle
 
-	ldmia	r1!, {r2-r4}
-	stmia	r0, {r2-r4}
-	str	r1, [r0, #0xc]         @ non-abstract part
-	ldr	r4, [r0, #0x14]        @ maxsize
-	cmp	r3, r4
-	movhi	r4, #B_STAT_OVERFLOW
-	movls	r4, #B_STAT_COMPLETED
-	strb	r4, [r0, #1]           @ state
+   returns b_stat_
+*/
+unpack_buffer:
+	stmfd	sp!, {lr}
+	ldmia	r1, {r2-r3}
+	ldr	r1, [r1, #0xc]
+	uxtb	r2, r2, ror #16
+	cmp	r2, #1                 @ max type
+	movhi	r0, #B_STAT_ERROR
 	bhi	__final
-	uxtb	r4, r2, ror #16        @ type
-	mov	r2, r3
-	mov	r3, r4
-	ldr	r0, [r0, #0x10]        @ target
-	cmp	r3, #1                 @ max type
-	bhi	__final
-	ldr	r3, [pc, r3, lsl #2]
-	add	pc, pc, r3
+	ldr	r2, [pc, r2, lsl #2]
+	add	pc, pc, r2
 __jtable:
 	.word	__plain - __jtable - 0x4
 	.word	__scatt - __jtable - 0x4
 __plain:
+	mov	r2, r3
 	bl	proccess_plain
 	b	__final
 __scatt:
+	mov	r2, r3
 	bl	proccess_scattered
-	b	__final
 __final:
+	ldmfd	sp!, {pc}
+
+proccess_buffer:
+	stmfd	sp!, {r4,lr}
+
+	ldmia	r1, {r2-r4}
+	stmia	r0, {r2-r4}
+	add	r4, r1, #0xc
+	str	r4, [r0, #0xc]         @ non-abstract part
+	ldr	r4, [r0, #0x14]        @ maxsize
+	cmp	r3, r4
+	mov	r4, r0
+	movhi	r0, #B_STAT_OVERFLOW
+	ldrls	r0, [r4, #0x10]
+	movls	r1, r4
+	blls	unpack_buffer
+	strb	r0, [r4, #1]           @ state
 	ldmfd	sp!, {r4,pc}
 
 memcpy:
@@ -176,6 +190,8 @@ __memcpy_done:
 proccess_scattered:
 	stmfd	sp!, {r4-r12,lr}
 	cmp	r2, #0
+	movlt	r0, #B_STAT_OVERFLOW
+	moveq	r0, #B_STAT_NONE
 	ble	__scat_final
 	ldr	r3, [r1]               @ chunk size
 	add	r1, r1, #8
@@ -194,12 +210,16 @@ __copy_done:
 	adds	r2, r2, r3
 	ldrne	r1, [r1]
 	blne	memcpy
+	mov	r0, #B_STAT_COMPLETED
 __scat_final:
 	ldmfd	sp!, {r4-r12,pc}
 
 proccess_plain:
+	stmfd	sp!, {lr}
 	ldr	r1, [r1]
-	b	memcpy
+	bl	memcpy
+	mov	r0, #B_STAT_COMPLETED
+	ldmfd	sp!, {pc}
 	
 __turn_off_mmu:
 	mov	r4, #0
