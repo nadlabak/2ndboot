@@ -37,16 +37,49 @@
 	b	__with_mmu             @ at that place, pc is physical.
 p_buffers_list:
 	.word buffers_list
+
+fixup_got:
+	ldr     r1, got_start
+	ldr     r2, got_end
+	add     r1, r1, r0
+	add     r2, r2, r0
+fixup_loop:
+	cmp     r1, r2
+	beq     fixup_end
+	ldr     r3, [r1]
+	add     r3, r3, r0
+	str     r3, [r1], #4
+	b       fixup_loop
+fixup_end:
+	bx      lr
+
+clean_bss:
+	ldr     r1, bss_start
+	ldr     r2, bss_end
+	add     r1, r1, r0
+	add     r2, r2, r0
+	mov     r3, #0
+clean_loop:
+	cmp     r1, r2
+	beq     clean_end
+	str     r3, [r1], #4
+	b       clean_loop
+clean_end:
+	bx      lr
+
 __with_mmu:
-	adr	r2, p_buffers_list
-	ldr	r3, p_buffers_list
-	add	r3, r3, r14
-	str	r3, [r2]
-	
 	ldr	sp, sp_svc
-	str	r14, [sp, #-4]!
 	mov	r5, r0
 	mov	r6, r1
+	mov	r0, r14
+
+	adr	r2, p_buffers_list
+	ldr	r3, p_buffers_list
+	add	r3, r3, r0
+	str	r3, [r2]
+	
+	bl	fixup_got
+	bl	clean_bss
 __buffers_loop:
 	subs	r6, r6, #1
 	bmi	__buffers_end
@@ -157,8 +190,6 @@ proccess_plain:
 	b	memcpy
 	
 __turn_off_mmu:
-	ldr	r0, [sp], #4
-
 	mov	r4, #0
 
 	mcr     p15, 0, r4, c13, c0, 0 @ set zero PID
@@ -198,36 +229,6 @@ l2_cln:
  */
 _start: b _main
 
-/* r0 - boot image base */
-fixup_got:
-	ldr     r4, got_start
-	ldr     r5, got_end
-	add     r4, r4, r0
-	add     r5, r5, r0
-fixup_loop:
-	cmp     r4, r5
-	beq     fixup_end
-	ldr     r6, [r4]
-	add     r6, r6, r0
-	str     r6, [r4], #4
-	b       fixup_loop
-fixup_end:
-	bx      lr
-
-clean_bss:
-	ldr     r4, bss_start
-	ldr     r5, bss_end
-	add     r4, r4, r0
-	add     r5, r5, r0
-	mov     r6, #0
-clean_loop:
-	cmp     r4, r5
-	beq     clean_end
-	str     r6, [r4], #4
-	b       clean_loop
-clean_end:
-	bx      lr
-
 got_start: .word __got_start__
 got_end:   .word __got_end__
 bss_start: .word __bss_start__
@@ -251,8 +252,6 @@ _main:
 	ldr     sp, sp_irq
 	cps     #0x13  @ supervisor
 
-	bl     fixup_got
-	bl     clean_bss
 	bl     main
 forever:
 	b	forever

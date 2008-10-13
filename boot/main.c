@@ -28,7 +28,7 @@ int jump_to_linux(void *img_base, int arch, void *atag_list) {
   return linux_func(0, arch, atag_list);
 }
 
-int main(void *boot_base) {
+int main() {
   struct memory_image image;
   
   font_init();
