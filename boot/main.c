@@ -31,10 +31,6 @@ int jump_to_linux(void *img_base, int arch, void *atag_list) {
 int main() {
   struct memory_image image;
   
-  font_init();
-  console_init(&font_8x8);
-  gpt_init();
-  nfc_init();
   image_complete();
 
   printf("e8 loader rev %s.\n", LDR_VERSION);

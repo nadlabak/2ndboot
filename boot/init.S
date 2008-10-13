@@ -1,4 +1,8 @@
 #include "buffers.h"
+.extern buffers_list
+.extern font_8x8
+.align 4
+
 .macro barrier, reg
 	mcr p15, 0, \reg, c7, c10, 4
 .endm
@@ -19,7 +23,6 @@
  * r1 - count of buffers.
  * r2 - pointer to new trnaslation table.
  */
-.align 4
 	cpsid   ifa
 	sub	r14, r15, #0xc         @ virt addr of entry point
 	sub	r14, r14, #0x30000000
@@ -35,12 +38,15 @@
 	sub	pc, r2, #0x30000000
 
 	b	__with_mmu             @ at that place, pc is physical.
+
+__reloc_start__:
 p_buffers_list:
 	.word buffers_list
+p_font_8x8:
+	.word font_8x8
+__reloc_end__:
 
 fixup_got:
-	ldr     r1, got_start
-	ldr     r2, got_end
 	add     r1, r1, r0
 	add     r2, r2, r0
 fixup_loop:
@@ -73,13 +79,19 @@ __with_mmu:
 	mov	r6, r1
 	mov	r0, r14
 
-	adr	r2, p_buffers_list
-	ldr	r3, p_buffers_list
-	add	r3, r3, r0
-	str	r3, [r2]
-	
+	mov	r1, #__reloc_start__
+	mov	r2, #__reloc_end__
+	bl	fixup_got
+	ldr	r1, got_start
+	ldr	r2, got_end
 	bl	fixup_got
 	bl	clean_bss
+	
+	bl	font_init
+	ldr	r0, p_font_8x8
+	bl	console_init
+	bl	gpt_init
+	bl	nfc_init
 __buffers_loop:
 	subs	r6, r6, #1
 	bmi	__buffers_end
