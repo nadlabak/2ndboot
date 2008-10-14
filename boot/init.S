@@ -134,11 +134,11 @@ __jtable:
 	.word	__scatt - __jtable - 0x4
 __plain:
 	mov	r2, r3
-	bl	proccess_plain
+	bl	unpack_plain
 	b	__final
 __scatt:
 	mov	r2, r3
-	bl	proccess_scattered
+	bl	unpack_scattered
 __final:
 	ldmfd	sp!, {pc}
 
@@ -187,7 +187,7 @@ __dqwords_done:
 __memcpy_done:
 	ldmfd	sp!, {r4-r10,pc}
 
-proccess_scattered:
+unpack_scattered:
 	stmfd	sp!, {r4-r12,lr}
 	cmp	r2, #0
 	movlt	r0, #B_STAT_OVERFLOW
@@ -214,7 +214,7 @@ __copy_done:
 __scat_final:
 	ldmfd	sp!, {r4-r12,pc}
 
-proccess_plain:
+unpack_plain:
 	stmfd	sp!, {lr}
 	ldr	r1, [r1]
 	bl	memcpy
