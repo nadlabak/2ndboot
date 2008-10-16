@@ -124,7 +124,7 @@ unpack_buffer:
 	ldmia	r1, {r2-r3}
 	ldr	r1, [r1, #0xc]
 	uxtb	r2, r2, ror #16
-	cmp	r2, #1                 @ max type
+	cmp	r2, #2                 @ max type
 	movhi	r0, #B_STAT_ERROR
 	bhi	__final
 	ldr	r2, [pc, r2, lsl #2]
@@ -132,6 +132,7 @@ unpack_buffer:
 __jtable:
 	.word	__plain - __jtable - 0x4
 	.word	__scatt - __jtable - 0x4
+	.word	__nand  - __jtable - 0x4
 __plain:
 	mov	r2, r3
 	bl	unpack_plain
@@ -139,6 +140,10 @@ __plain:
 __scatt:
 	mov	r2, r3
 	bl	unpack_scattered
+	b	__final
+__nand:
+	mov	r2, r3
+	bl	unpack_nand
 __final:
 	ldmfd	sp!, {pc}
 
@@ -220,6 +225,16 @@ unpack_plain:
 	bl	memcpy
 	mov	r0, #B_STAT_COMPLETED
 	ldmfd	sp!, {pc}
+
+unpack_nand:
+	stmfd	sp!, {r4, lr}
+	ldr	r1, [r1]
+	mov	r4, r2
+	bl	nfc_read_data
+	cmp	r4, r0
+	movne	r0, #B_STAT_ERROR
+	moveq	r0, #B_STAT_COMPLETED
+	ldmfd	sp!, {r4, pc}
 	
 __turn_off_mmu:
 	mov	r4, #0

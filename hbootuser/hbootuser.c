@@ -15,6 +15,7 @@
 #define STR(x) _STR(x)
 
 int handle_file(FILE *fp, int tag, int *buf);
+int handle_nand(FILE *fp, int tag, int *buf);
 
 int ctrlfd;
 int buffers[MAX_BUFFERS_COUNT];
@@ -27,6 +28,7 @@ struct source_type {
 };
 struct source_type g_sources[] = {
 	{"file", handle_file},
+	{"nand", handle_nand},
 	{NULL  , NULL       },
 };
 
@@ -158,6 +160,22 @@ int handle_file(FILE *fp, int tag, int *buf) {
 	}
 	printf("loaded file %s\n", fname);
 	close(fd);
+	return 0;
+}
+
+int handle_nand(FILE *fp, int tag, int *buf) {
+	unsigned int offset;
+	unsigned int size;
+
+	if (fscanf(fp, "%u@0x%x", &size, &offset) != 2) {
+		fprintf(stderr, "can't parse data\n");
+		return -1;
+	}
+	if ((*buf = allocate_buffer(tag, size, B_TYPE_NAND, 0, (uint32_t)offset)) == INVALID_BUFFER_HANDLE) {
+		fprintf(stderr, "failed to allocate buffer\n");
+		return -1;
+	}
+	printf("loaded nand %x@%x\n", size, offset);
 	return 0;
 }
 

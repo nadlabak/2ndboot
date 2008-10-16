@@ -4,6 +4,7 @@
 #include "images.h"
 #include "stdio.h"
 #include "atag.h"
+#include "common.h"
 
 void *atag_build() {
   struct memory_image image;

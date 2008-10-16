@@ -23,6 +23,10 @@ struct scattered_buffer {
 	uint32_t allocated_chunks;
 	uint32_t chunks[0];
 };
+struct nand_buffer {
+	struct abstract_buffer a;
+	uint32_t offset;
+};
 #pragma pack(pop)
 
 #define ABSTRACT(p) ((struct abstract_buffer*)p)
@@ -164,7 +168,7 @@ static void free_scattered_buffer(struct scattered_buffer *sc) {
 	free_high_mem((void*)sc);
 }
 
-static struct scattered_buffer *allocate_scattered_buffer(uint32_t bufsize) {
+static struct scattered_buffer *allocate_scattered_buffer(uint32_t bufsize, uint32_t rest) {
 	struct scattered_buffer *sc;
 	uint32_t p;
 	size_t sc_size;
@@ -227,7 +231,7 @@ static int append_scattered_buffer(struct scattered_buffer *sc, const char __use
 	return written;
 }
 	
-static struct plain_buffer *allocate_plain_buffer(uint32_t bufsize) {
+static struct plain_buffer *allocate_plain_buffer(uint32_t bufsize, uint32_t rest) {
 	struct plain_buffer *pb;
 
 	pb = (struct plain_buffer*)get_high_mem(sizeof(struct plain_buffer));
@@ -261,6 +265,21 @@ static int append_plain_buffer(struct plain_buffer *pb, const char __user *data,
 	return (int)size;
 }
 
+static struct nand_buffer *allocate_nand_buffer(uint32_t bufsize, uint32_t rest) {
+	struct nand_buffer *nd;
+
+	nd = (struct nand_buffer*)get_high_mem(sizeof(struct nand_buffer));
+	if (nd == NULL) {
+		return NULL;
+	}
+	nd->offset = rest;
+	return nd;
+}
+
+static void free_nand_buffer(struct nand_buffer *nd) {
+	free_high_mem(nd);
+}
+
 void free_typed_buffer(void *buffer, uint8_t type) {
 	switch (type) {
 		case B_TYPE_PLAIN:
@@ -269,19 +288,25 @@ void free_typed_buffer(void *buffer, uint8_t type) {
 		case B_TYPE_SCATTERED:
 			free_scattered_buffer((struct scattered_buffer*)buffer);
 			break;
+		case B_TYPE_NAND:
+			free_nand_buffer((struct nand_buffer*)buffer);
+			break;
 	}
 }
-int allocate_buffer(uint8_t tag, uint8_t type, uint8_t attrs, uint32_t bufsize) {
+int allocate_buffer(uint8_t tag, uint8_t type, uint8_t attrs, uint32_t bufsize, uint32_t rest) {
 	struct generic_buffer *buf;
 	void *data;
 	int handle;
 
 	switch (type) {
 		case B_TYPE_PLAIN:
-			data = allocate_plain_buffer(bufsize);
+			data = allocate_plain_buffer(bufsize, rest);
 			break;
 		case B_TYPE_SCATTERED:
-			data = allocate_scattered_buffer(bufsize);
+			data = allocate_scattered_buffer(bufsize, rest);
+			break;
+		case B_TYPE_NAND:
+			data = allocate_nand_buffer(bufsize, rest);
 			break;
 		default:
 			data = NULL;

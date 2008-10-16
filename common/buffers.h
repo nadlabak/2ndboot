@@ -34,6 +34,7 @@ struct abstract_buffer {
 
 #define B_TYPE_PLAIN     (0)
 #define B_TYPE_SCATTERED (1)
+#define B_TYPE_NAND      (2)
 
 #define B_ATTR_VERIFY    (1 << 0)
 

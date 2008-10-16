@@ -235,6 +235,7 @@ size_t nfc_read_data(uint8_t *dest, uint32_t offset, size_t size) {
   pagesize = device.id->page_size;
   page = offset / pagesize;
   fpart = offset & (pagesize - 1);
+  offset = 0;
   if (fpart) {
     uint32_t count;
 
