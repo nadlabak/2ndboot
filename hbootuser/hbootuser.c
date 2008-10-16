@@ -6,14 +6,28 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <string.h>
+#include <linux/limits.h>
 #include "../hbootmod/hboot.h"
+#define MAX_SOURCE_LEN 32
+
+#define _STR(x) #x
+#define STR(x) _STR(x)
+
+int handle_file(FILE *fp, int tag, int *buf);
 
 int ctrlfd;
-struct desc {
-	int fd;
-	uint32_t tag;
-	size_t size;
-	int buffer;
+int buffers[MAX_BUFFERS_COUNT];
+int buffers_count;
+int loader = INVALID_BUFFER_HANDLE;
+
+struct source_type {
+	const char *name;
+	int (*handle)(FILE *fp, int tag, int *buf);
+};
+struct source_type g_sources[] = {
+	{"file", handle_file},
+	{NULL  , NULL       },
 };
 
 int open_ctrl() {
@@ -23,6 +37,7 @@ int open_ctrl() {
 	}
 	return ctrlfd;
 }
+
 size_t fdsize(int fd) {
 	off_t seek;
 
@@ -31,6 +46,7 @@ size_t fdsize(int fd) {
 
 	return (size_t)seek;
 }
+
 int try_file(const char *path, size_t *size) {
 	int fd;
 
@@ -49,22 +65,23 @@ int try_file(const char *path, size_t *size) {
 	}
 	return fd;
 }
-int allocate_buffer(int type, int checksumed, size_t size, uint32_t tag) {
+
+int allocate_buffer(int tag, size_t size, int type, int attrs, uint32_t rest) {
 	struct hboot_buffer_req req;
 	int ret;
+
 	req.tag = (uint8_t)tag;
-	req.attrs = 0;
-	if (checksumed) {
-		req.attrs |= B_ATTR_VERIFY;
-	}
+	req.attrs = (uint8_t)attrs;
 	req.type = (uint8_t)type;
 	req.size = (uint32_t)size;
+	req.rest = rest;
 
 	if ((ret = ioctl(ctrlfd, HBOOT_ALLOCATE_BUFFER, &req)) < 0) {
 		perror("ioctl");
 	}
 	return ret;
 }
+
 int free_buffer(int buffer) {
 	int ret;
 
@@ -73,6 +90,7 @@ int free_buffer(int buffer) {
 	}
 	return ret;
 }
+
 int select_buffer(int buffer) {
 	int ret;
 
@@ -81,6 +99,7 @@ int select_buffer(int buffer) {
 	}
 	return ret;
 }
+
 int fd2fd(int in, size_t size, int out) {
 	char buf[4096];
 	size_t written = 0;
@@ -90,110 +109,127 @@ int fd2fd(int in, size_t size, int out) {
 			ret = size - written;
 		}
 		if (write(out, buf, ret) < ret) {
-			fprintf(stderr, "invalid write\n");
+			perror("write()");
 			return -1;
 		}
 		written += ret;
 	}
 	return 0;
 }
-int load_desc(struct desc *d) {
-	if (select_buffer(d->buffer) < 0) {
-		return -1;
-	}
-	return fd2fd(d->fd, d->size, ctrlfd);
-}
 
 void boot(int handle) {
 	ioctl(ctrlfd, HBOOT_BOOT, handle);
 }
 
+int handle_file(FILE *fp, int tag, int *buf) {
+	char fname[PATH_MAX+1];
+	int btype;
+	int battrs;
+	size_t filesize;
+	int fd;
+
+	fscanf(fp, "%" STR(PATH_MAX) "s", fname);
+	if ((fd = try_file(fname, &filesize)) < 0) {
+		perror("open()");
+		return -1;
+	}
+
+	if ((tag == 0) || (filesize < 4*4096)) {
+		btype = B_TYPE_PLAIN;
+	} else {
+		btype = B_TYPE_SCATTERED;
+	}
+	if (tag == 0) {
+		battrs = 0;
+	} else {
+		battrs = B_ATTR_VERIFY;
+	}
+	if ((*buf = allocate_buffer(tag, filesize, btype, battrs, 0)) == INVALID_BUFFER_HANDLE) {
+		fprintf(stderr, "failed to allocate buffer\n");
+		close(fd);
+		return -1;
+	}
+	select_buffer(*buf);
+	if (fd2fd(fd, filesize, ctrlfd) < 0) {
+		fprintf(stderr, "failed to copy file contents\n");
+		close(fd);
+		free_buffer(*buf);
+		return -1;
+	}
+	printf("loaded file %s\n", fname);
+	close(fd);
+	return 0;
+}
+
 int main(int argc, char **argv) {
 	FILE *fp;
-	uint32_t tag;
-	char fname[1024];
-	struct desc descs[MAX_BUFFERS_COUNT], *loader = NULL;
-	int descs_cnt = 0;
-	int i;
-
+	
 	if (argc != 2) {
 		fprintf(stderr, "Usage: %s <descriptor>\n", argv[0]);
 		return 1;
 	}
 	if (open_ctrl() < 0) {
-		fprintf(stderr, "Failed to open device\n");
+		perror("open(ctrl device)");
 		return 1;
 	}
-	fp = fopen(argv[1], "r");
-	if (fp == NULL) {
-		fprintf(stderr, "fopen");
+	if ((fp = fopen(argv[1], "r")) == NULL) {
+		perror("open(descriptor file)");
 		return 1;
 	}
-	while ((fscanf(fp, "%s %u", fname, &tag) == 2) && (descs_cnt < MAX_BUFFERS_COUNT)) {
-		int fd;
-		size_t size;
-		if (fname[0] == '#') {
+	
+	while (buffers_count < MAX_BUFFERS_COUNT) {
+		int tag;
+		int ret;
+		char source[MAX_SOURCE_LEN+1];
+		struct source_type *s_type;
+
+		ret = fscanf(fp, "%d", &tag);
+		if (ret == EOF) {
+			if (errno) {
+				perror("fscanf()");
+				goto out;
+			}
+			break;
+		} else if (ret != 1) {
+			int c;
+			do {
+				c = getc(fp);
+			} while ((c != EOF) && (c != '\n'));
 			continue;
 		}
-
-		fd = try_file(fname, &size);
-		if (fd < 0) {
-			goto out;
-		}
-
-		descs[descs_cnt].fd = fd;
-		descs[descs_cnt].tag = tag;
-		descs[descs_cnt].size = size;
-		descs[descs_cnt].buffer = -1;
-
-		descs_cnt++;
-	}
-
-	for (i = 0; i < descs_cnt; ++i) {
-		int type;
-		int checksumed;
-
-		if (descs[i].tag == 0) {
-			type = B_TYPE_PLAIN;
-			checksumed = 0;
-			loader = &descs[i];
-		} else {
-			if (descs[i].size < 2*4096) {
-				type = B_TYPE_PLAIN;
-			} else {
-				type = B_TYPE_SCATTERED;
+		fscanf(fp, "%" STR(MAX_SOURCE_LEN) "s", source);
+		for (s_type = g_sources; s_type->name != NULL; ++s_type) {
+			if (!strcmp(s_type->name, source)) {
+				if (s_type->handle(fp, tag, &buffers[buffers_count]) < 0) {
+					goto out;
+				}
+				if (tag == 0) {
+					loader = buffers[buffers_count];
+				}
+				buffers_count++;
+				break;
 			}
-			checksumed = 1;
 		}
-		if ((descs[i].buffer = allocate_buffer(type, checksumed, descs[i].size, descs[i].tag)) < 0) {
-			fprintf(stderr, "Failed to alloc buffer\n");
+		if (s_type->name == NULL) {
+			printf("don't know how to handle source %s\n", source);
 			goto out;
 		}
-	}
-	fprintf(stderr, "Buffers allocated\n");
-	if (loader == NULL) {
-		fprintf(stderr, "Sorry, no loader provided\n");
-		goto out;
-	}
-	for (i = 0; i < descs_cnt; ++i) {
-		if (load_desc(&descs[i]) < 0) {
-			fprintf(stderr, "Failed to load file\n");
-			goto out;
-		}
-		close(descs[i].fd);
 	}
 	fclose(fp);
 	fp = NULL;
-	printf("Everythin is loaded, booting\n");
+	if (loader == INVALID_BUFFER_HANDLE) {
+		fprintf(stderr, "No loader provided\n");
+		goto out;
+	}
+	printf("Everything is loaded, booting\n");
 	fflush(stdout);
-	boot(loader->buffer);
+	boot(loader);
 out:
 	if (fp) fclose(fp);
-	printf("buffers: %d\n", descs_cnt);
-	while (descs_cnt-- > 0) {
-		printf("%d\n", descs[descs_cnt].buffer);
-		close(descs[descs_cnt].fd);
-		if (descs[descs_cnt].buffer >= 0) free_buffer(descs[descs_cnt].buffer);
+	while (buffers_count-- > 0) {
+		if (buffers[buffers_count] != INVALID_BUFFER_HANDLE) {
+			free_buffer(buffers[buffers_count]);
+		}
 	}
 	return 1;
 }

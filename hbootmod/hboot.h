@@ -29,6 +29,7 @@ struct hboot_buffer_req {
 	uint8_t type;
 	uint8_t attrs;
 	uint32_t size;
+	uint32_t rest;
 };
 
 #define MAX_BUFFERS_COUNT 8
