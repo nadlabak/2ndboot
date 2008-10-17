@@ -18,6 +18,7 @@ int dsp_mem_read_word(addr_t addr, uint32_t *dest) {
     printf("%08x failed 2nd read\n", addr);
     return -1;
   }
+  *dest = ((*dest & 0xffff) << 16) | ((*dest & 0xffff0000) >> 16);
   return 0;
 }
 
@@ -26,7 +27,7 @@ int dsp_mem_write_word(addr_t addr, uint32_t *word) {
 
   mu_write(0, 0x1);
   mu_write(1, addr);
-  mu_write(2, *word);
+  mu_write(2, ((*word & 0xffff) << 16) | ((*word & 0xffff0000) >> 16));
   mu_read(0, &tmp);
   if (tmp != 0x1) {
     printf("%08x failed write\n", addr);
