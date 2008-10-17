@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+#define DSP_BPLOADER_ADDR (0x93ffc000)
+
 int dsp_mem_read_word(addr_t src, uint32_t *dest);
 int dsp_mem_write_word(addr_t dest, uint32_t *word);
 int dsp_mem_read(addr_t src, uint32_t *dest, unsigned int words);

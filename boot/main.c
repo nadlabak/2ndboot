@@ -11,6 +11,7 @@
 #include "hw_misc.h"
 #include "mu.h"
 #include "images.h"
+#include "dsp.h"
 #include "crc32.h"
 
 void critical_error(error_t err) {
@@ -37,6 +38,10 @@ int main() {
   image_dump_stats();
 
   mu_dsp_reset();
+  if (image_find(IMG_BPLOADER, &image) != NULL) {
+    dsp_mem_write(DSP_BPLOADER_ADDR, image.data, image.size >> 2);
+    dsp_start_loader(DSP_BPLOADER_ADDR);
+  }
   hw_preboot();
 
   if (image_find(IMG_LINUX, &image) != NULL) {
