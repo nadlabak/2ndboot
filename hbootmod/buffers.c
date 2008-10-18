@@ -95,7 +95,7 @@ static int get_new_buffer(struct generic_buffer **pbuf) {
 		}
 		spin_unlock(&buffers.bufs[buffers.used-1].buf_lock);
 	}
-	if (buffers.used >= MAX_BUFFERS_COUNT-1) {
+	if (buffers.used >= MAX_BUFFERS_COUNT) {
 		spin_unlock(&buffers.ctx_lock);
 		return INVALID_BUFFER_HANDLE;
 	}
