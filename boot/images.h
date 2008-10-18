@@ -9,6 +9,7 @@ struct memory_image {
 };
 
 struct memory_image *image_find(uint8_t tag, struct memory_image *dest);
+int image_unpack(uint8_t tag, addr_t dest, size_t maxsize);
 void image_complete();
 void image_dump_stats();
 

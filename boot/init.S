@@ -156,6 +156,9 @@ proccess_buffer:
 	stmia	r0, {r2-r4}
 	add	r4, r1, #0xc
 	str	r4, [r0, #0xc]         @ non-abstract part
+	ldr	r4, [r0, #0x18]        @ attrs
+	tst     r4, #IMG_ATTR_LAZY
+	ldmnefd	sp!, {r4,pc}
 	ldr	r4, [r0, #0x14]        @ maxsize
 	cmp	r3, r4
 	mov	r4, r0
@@ -331,3 +334,4 @@ __forever:
 
 .global _start
 .global jump_to_linux
+.global unpack_buffer

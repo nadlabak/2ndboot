@@ -38,6 +38,8 @@ struct abstract_buffer {
 
 #define B_ATTR_VERIFY    (1 << 0)
 
+#define IMG_ATTR_LAZY    (1 << 0)
+
 #define IMG_LINUX        (1)
 #define IMG_INITRAMFS    (2)
 #define IMG_MOTFLATTREE  (3)

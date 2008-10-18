@@ -3,6 +3,8 @@
 #include "memory.h"
 #include "stdio.h"
 
+uint8_t unpack_buffer(addr_t dest, void *handle);
+
 struct buffer_handle {
   struct abstract_buffer abstract;
   void *rest;
@@ -51,6 +53,21 @@ struct memory_image *image_find(uint8_t tag, struct memory_image *dest) {
   return NULL;
 }
 
+int image_unpack(uint8_t tag, addr_t dest, size_t maxsize) {
+  if (tag > IMG_LAST_TAG) {
+    return -1;
+  }
+  if (maxsize < buffers_list[tag].abstract.size) {
+    return -1;
+  }
+  if (buffers_list[tag].abstract.state == B_STAT_CREATED) {
+    if (unpack_buffer(dest, &buffers_list[tag]) == B_STAT_COMPLETED) {
+      return 0;
+    }
+  }
+  return -1;
+}
+
 void image_complete() {
   int i;
   struct abstract_buffer *ab;
@@ -77,9 +94,6 @@ void image_dump_stats() {
   for (i = 1; i <= IMG_LAST_TAG; ++i) {
     int c;
 
-    if (buffers_list[i].dest == 0) {
-      continue;
-    }
     ab = &buffers_list[i].abstract;
 
     switch (ab->state) {
