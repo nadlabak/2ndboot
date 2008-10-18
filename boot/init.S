@@ -40,10 +40,12 @@
 	b	__with_mmu             @ at that place, pc is physical.
 
 __reloc_start__:
+
 p_buffers_list:
-	.word buffers_list
+	.word	buffers_list
 p_font_8x8:
-	.word font_8x8
+	.word	font_8x8
+
 __reloc_end__:
 
 fixup_got:
@@ -236,22 +238,31 @@ unpack_nand:
 	moveq	r0, #B_STAT_COMPLETED
 	ldmfd	sp!, {r4, pc}
 	
-/* Now MMU is turned off
- * r0 - physical address of boot image base
- */
-_start: b _main
+_start:
+	b	__main
 
-got_start: .word __got_start__
-got_end:   .word __got_end__
-bss_start: .word __bss_start__
-bss_end:   .word __bss_end__
-sp_svc: .word 0x92000000
-sp_sys: .word 0x91f80000
-sp_und: .word 0x91f7f000
-sp_abt: .word 0x91f7e000
-sp_fiq: .word 0x91f7d000
-sp_irq: .word 0x91f7c000
-_main:
+got_start:
+	.word	__got_start__
+got_end:
+	.word	__got_end__
+bss_start:
+	.word	__bss_start__
+bss_end:
+	.word	__bss_end__
+sp_svc:
+	.word	0x92000000
+sp_sys:
+	.word	0x91f80000
+sp_und:
+	.word	0x91f7f000
+sp_abt:
+	.word	0x91f7e000
+sp_fiq:
+	.word	0x91f7d000
+sp_irq:
+	.word	0x91f7c000
+
+__main:
 	cps     #0x1f @ system
 	ldr     sp, sp_sys
 	cps     #0x1b @ undef
@@ -264,9 +275,8 @@ _main:
 	ldr     sp, sp_irq
 	cps     #0x13  @ supervisor
 
-	bl     main
-forever:
-	b	forever
+	bl	main
+	b	__forever
 
 /* Promises not to touch r0-r3 */
 __turn_off_mmu:
