@@ -103,7 +103,7 @@ __buffers_loop:
 	blne	proccess_buffer
 	b	__buffers_loop
 __buffers_end:
-	b	__turn_off_mmu
+	b	_start
 
 find_tag:
 	cmp	r0, #IMG_LAST_TAG
@@ -236,6 +236,39 @@ unpack_nand:
 	moveq	r0, #B_STAT_COMPLETED
 	ldmfd	sp!, {r4, pc}
 	
+/* Now MMU is turned off
+ * r0 - physical address of boot image base
+ */
+_start: b _main
+
+got_start: .word __got_start__
+got_end:   .word __got_end__
+bss_start: .word __bss_start__
+bss_end:   .word __bss_end__
+sp_svc: .word 0x92000000
+sp_sys: .word 0x91f80000
+sp_und: .word 0x91f7f000
+sp_abt: .word 0x91f7e000
+sp_fiq: .word 0x91f7d000
+sp_irq: .word 0x91f7c000
+_main:
+	cps     #0x1f @ system
+	ldr     sp, sp_sys
+	cps     #0x1b @ undef
+	ldr     sp, sp_und
+	cps     #0x17 @ abort
+	ldr     sp, sp_abt
+	cps     #0x11  @ fiq
+	ldr     sp, sp_fiq
+	cps     #0x12  @ irq
+	ldr     sp, sp_irq
+	cps     #0x13  @ supervisor
+
+	bl     main
+forever:
+	b	forever
+
+/* Promises not to touch r0-r3 */
 __turn_off_mmu:
 	mov	r4, #0
 
@@ -270,36 +303,21 @@ l2_cln:
 	mcr     p15, 0, r4, c7, c6, 0  @ invalidate D cache
 	mcr     p15, 0, r4, c8, c5, 0  @ invalidate ITLB
 	mcr     p15, 0, r4, c8, c6, 0  @ invalidate DTLB
+	
+	bx	lr
 
-/* Now MMU is turned off
- * r0 - physical address of boot image base
- */
-_start: b _main
+/* r0 - image base addr
+   r1 - arch
+   r2 - atag list
+*/
+	
+jump_to_linux:
+	bl	__turn_off_mmu
+	mov	r3, r0
+	mov	r0, #0
+	bx	r3
+__forever:
+	b	__forever
 
-got_start: .word __got_start__
-got_end:   .word __got_end__
-bss_start: .word __bss_start__
-bss_end:   .word __bss_end__
-sp_svc: .word 0x92000000
-sp_sys: .word 0x91f80000
-sp_und: .word 0x91f7f000
-sp_abt: .word 0x91f7e000
-sp_fiq: .word 0x91f7d000
-sp_irq: .word 0x91f7c000
-_main:
-	cps     #0x1f @ system
-	ldr     sp, sp_sys
-	cps     #0x1b @ undef
-	ldr     sp, sp_und
-	cps     #0x17 @ abort
-	ldr     sp, sp_abt
-	cps     #0x11  @ fiq
-	ldr     sp, sp_fiq
-	cps     #0x12  @ irq
-	ldr     sp, sp_irq
-	cps     #0x13  @ supervisor
-
-	bl     main
-forever:
-	b	forever
 .global _start
+.global jump_to_linux

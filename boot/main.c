@@ -21,14 +21,6 @@ void critical_error(error_t err) {
   while (1);
 }
 
-int jump_to_linux(void *img_base, int arch, void *atag_list) {
-  int (*linux_func)(int zero, int arch, void *atag_list);
-
-  printf("branching to %p\n", img_base);
-  linux_func = (int (*)(int, int, void*))img_base;
-  return linux_func(0, arch, atag_list);
-}
-
 int main() {
   struct memory_image image;
   
