@@ -39,6 +39,9 @@ struct buffer_handle buffers_list[IMG_LAST_TAG+1] = {
     .dest = 0x91120000,
     .maxsize = 16*1024,
   },
+  [IMG_BPFW] = {
+    .attrs = IMG_ATTR_LAZY,
+  },
 };
 
 struct memory_image *image_find(uint8_t tag, struct memory_image *dest) {

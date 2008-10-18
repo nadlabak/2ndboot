@@ -32,7 +32,16 @@ int main() {
   mu_dsp_reset();
   if (image_find(IMG_BPLOADER, &image) != NULL) {
     dsp_mem_write(DSP_BPLOADER_ADDR, image.data, image.size >> 2);
-    dsp_start_loader(DSP_BPLOADER_ADDR);
+    if (dsp_start_loader(DSP_BPLOADER_ADDR) == 0) {
+      if (image_unpack(IMG_BPFW, DSP_BPFW_ADDR, DSP_BPLOADER_ADDR - DSP_BPFW_ADDR) == 0) {
+	printf("starting dsp fw..\n");
+	if (dsp_start_image(DSP_BPFW_ADDR) == 0) {
+	  printf("ok\n");
+	} else {
+	  printf("failed\n");
+	}
+      }
+    }
   }
   hw_preboot();
 

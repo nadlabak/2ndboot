@@ -46,7 +46,8 @@ struct abstract_buffer {
 #define IMG_CMDLINE      (4)
 #define IMG_USBFW        (5)
 #define IMG_BPLOADER     (6)
+#define IMG_BPFW         (7)
 
-#define IMG_LAST_TAG     IMG_BPLOADER
+#define IMG_LAST_TAG     IMG_BPFW
 
 #endif // __BUFFERS_H__
