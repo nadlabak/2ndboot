@@ -159,9 +159,7 @@ static size_t nfc_copy_from_rambuf(uint8_t *dest, uint32_t offset, size_t size) 
     adest += 2;
   }
   if (size) {
-    printf("hehehe %08x %08x\n", adest, read32(adest));
     write8(nfc_read8(offset), adest);
-    printf("hehehe2 %08x %08x\n", adest, read32(adest));
   }
   return ssize;
 }
