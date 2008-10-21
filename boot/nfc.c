@@ -169,7 +169,7 @@ static size_t nfc_copy_from_rambuf(uint8_t *dest, uint32_t offset, size_t size) 
 static int nfc_detect_device() {
   int i;
   uint8_t mid, did;
-  uint16_t *rambuf = (uint16_t*)NFC_RAMBUF0_BASE_ADDR;
+  volatile uint16_t *rambuf = (volatile uint16_t*)NFC_RAMBUF0_BASE_ADDR;
 
   nfc_id();
   if (IS_WIDE_BUS()) {
