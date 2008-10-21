@@ -2,7 +2,7 @@ DESTDIR		 = /mmc/mmca1/ldr
 DESTHOST	 = 192.168.16.2
 
 PREFIX		 = /mnt/hd/e8-gcc/bin/arm-linux-gnueabi
-CFLAGS		:= -fno-stack-protector -fno-builtin -nostdinc -fPIC -D__LOADER__
+CFLAGS		:= -fno-stack-protector -fno-builtin -nostdinc -fPIC -D__LOADER__ -Os
 LDFLAGS		:= -static -nostdlib -fPIC
 ASFLAGS		:= -c -x assembler-with-cpp -D__LOADER__
 LIBS		:= -lgcc
