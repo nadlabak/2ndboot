@@ -137,4 +137,7 @@
 #define SYSTEM_REV_MIN          CHIP_REV_1_0
 #define SYSTEM_REV_NUM          3
 
+#define L1_LINE_LENGTH          (32)
+#define L2_LINE_LENGTH          (32)
+
 #endif				/*  __ASM_ARM_ARCH_MXC91231_H_ */

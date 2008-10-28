@@ -283,6 +283,29 @@ __main:
 	bl	main
 	b	__forever
 
+/* r0 - PA of start
+   r1 - PA of end 
+*/
+caches_flush_lines:
+	mov	r2, #0
+	
+	barrier	r2
+	tst	r1, #(L1_LINE_LENGTH-1)
+	addeq	r2, r1, #L1_LINE_LENGTH
+	movne	r2, r1
+	mcrr	p15, 0, r2, r0, c14    @ clean and invalidate L1DC range
+	mov	r2, #L2CC_BASE_ADDR
+	add	r2, r2, #0x7f0         @ clean and invalidate L2C line by PA
+
+	bic	r0, r0, #(L2_LINE_LENGTH-1)
+__l2_flush_range:
+	cmp	r0, r1
+	strlo	r0, [r2]
+	addlo	r0, r0, #L2_LINE_LENGTH
+	blo	__l2_flush_range
+	
+	bx	lr
+
 /* Promises not to touch r0-r3 */
 __turn_off_mmu:
 	mov	r4, #0
@@ -337,3 +360,4 @@ __forever:
 .global _start
 .global jump_to_linux
 .global unpack_buffer
+.global caches_flush_lines
