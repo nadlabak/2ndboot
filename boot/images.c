@@ -56,19 +56,19 @@ struct memory_image *image_find(uint8_t tag, struct memory_image *dest) {
   return NULL;
 }
 
-int image_unpack(uint8_t tag, addr_t dest, size_t maxsize) {
+struct memory_image *image_unpack(uint8_t tag, struct memory_image *dest) {
   if (tag > IMG_LAST_TAG) {
-    return -1;
+    return NULL;
   }
-  if (maxsize < buffers_list[tag].abstract.size) {
-    return -1;
+  if (dest->size < buffers_list[tag].abstract.size) {
+    return NULL;
   }
   if (buffers_list[tag].abstract.state == B_STAT_CREATED) {
-    if (unpack_buffer(dest, &buffers_list[tag]) == B_STAT_COMPLETED) {
-      return 0;
+    if (unpack_buffer((addr_t)dest->data, &buffers_list[tag]) == B_STAT_COMPLETED) {
+      return dest;
     }
   }
-  return -1;
+  return NULL;
 }
 
 void image_complete() {
