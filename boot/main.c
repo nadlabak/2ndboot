@@ -1,18 +1,12 @@
 #include "types.h"
-#include "console.h"
-#include "font.h"
 #include "stdio.h"
-#include "gpt.h"
-#include "nfc.h"
 #include "error.h"
 #include "atag.h"
 #include "common.h"
 #include "memory.h"
 #include "hw_misc.h"
-#include "mu.h"
 #include "images.h"
 #include "dsp.h"
-#include "crc32.h"
 
 void critical_error(error_t err) {
   if (console_initialized()) {
