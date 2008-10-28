@@ -122,32 +122,31 @@ find_tag:
    returns b_stat_
 */
 unpack_buffer:
-	stmfd	sp!, {lr}
+	stmfd	sp!, {r4,lr}
 	ldmia	r1, {r2-r3}
 	ldr	r1, [r1, #0xc]
 	uxtb	r2, r2, ror #16
 	cmp	r2, #2                 @ max type
 	movhi	r0, #B_STAT_ERROR
 	bhi	__final
-	ldr	r2, [pc, r2, lsl #2]
-	add	pc, pc, r2
+	mov	r4, r2
+	mov	r2, r3
+	ldr	r4, [pc, r4, lsl #2]
+	add	pc, pc, r4
 __jtable:
 	.word	__plain - __jtable - 0x4
 	.word	__scatt - __jtable - 0x4
 	.word	__nand  - __jtable - 0x4
 __plain:
-	mov	r2, r3
 	bl	unpack_plain
 	b	__final
 __scatt:
-	mov	r2, r3
 	bl	unpack_scattered
 	b	__final
 __nand:
-	mov	r2, r3
 	bl	unpack_nand
 __final:
-	ldmfd	sp!, {pc}
+	ldmfd	sp!, {r4,pc}
 
 proccess_buffer:
 	stmfd	sp!, {r4,lr}
@@ -226,9 +225,11 @@ __scat_final:
 
 unpack_plain:
 	stmfd	sp!, {lr}
+	sub	sp, sp, #4
 	ldr	r1, [r1]
 	bl	memcpy
 	mov	r0, #B_STAT_COMPLETED
+	add	sp, sp, #4
 	ldmfd	sp!, {pc}
 
 unpack_nand:
