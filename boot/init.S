@@ -1,4 +1,5 @@
 #include "buffers.h"
+#include "mxc91231.h"
 .extern buffers_list
 .extern font_8x8
 .align 4
@@ -288,7 +289,7 @@ __turn_off_mmu:
 
 	mcr     p15, 0, r4, c13, c0, 0 @ set zero PID
 	mcr     p15, 0, r4, c7, c10, 0 @ clean D cache
-	mov	r5, #0x30000000        @ L2CC base
+	mov	r5, #L2CC_BASE_ADDR
 
 	ldr	r6, [r5, #0x100]       @ disable L2 cache
 	bic	r6, r6, #0x1
@@ -299,10 +300,10 @@ __turn_off_mmu:
 	mov	r6, #0xff
 	str	r6, [r5, #0x7fc]       @ request L2 cache clean and invalidation
 	barrier r4
-l2_cln:
+__l2_flush_whole:
 	ldr	r6, [r5, #0x7fc]       @ and wait for it.
 	cmp	r6, #0
-	bne	l2_cln
+	bne	__l2_flush_whole
 
 	mcr     p15, 0, r4, c7, c5,  0 @ invalidate I cache
 
