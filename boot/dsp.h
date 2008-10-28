@@ -14,4 +14,6 @@ int dsp_mem_write(addr_t dest, uint32_t *src, unsigned int words);
 int dsp_start_loader(addr_t paddr);
 int dsp_start_image(addr_t paddr);
 
+int dsp_reboot();
+
 #endif // __HW_DSP_H__

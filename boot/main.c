@@ -29,6 +29,7 @@ int main() {
   printf("e8 loader rev %s.\n", LDR_VERSION);
   image_dump_stats();
 
+  dsp_reboot();
   hw_preboot();
 
   if (image_find(IMG_LINUX, &image) != NULL) {

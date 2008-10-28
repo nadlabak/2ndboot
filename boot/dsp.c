@@ -1,6 +1,8 @@
 #include "mu.h"
 #include "dsp.h"
 #include "common.h"
+#include "images.h"
+#include "memory.h"
 
 int dsp_mem_read_word(addr_t addr, uint32_t *dest) {
   uint32_t tmp;
@@ -94,4 +96,37 @@ int dsp_start_image(addr_t paddr) {
   mu_read(0, &foo);
   mu_dump_mrrs();
   return 0;
+}
+
+int dsp_reboot() {
+  struct memory_image image;
+
+  mu_dsp_reset();
+
+  if (image_find(IMG_BPLOADER, &image) == NULL) {
+    printf("no bploader, won't reset DSP");
+    return -1;
+  }
+  if (dsp_mem_write(DSP_BPLOADER_ADDR, image.data, image.size >> 2) < 0) {
+    printf("failed to write bploader\n");
+    return -1;
+  }
+  if (dsp_start_loader(DSP_BPLOADER_ADDR) < 0) {
+    printf("failed to start bploader\n");
+    return -1;
+  }
+  image.data = (void*)DSP_BPFW_ADDR;
+  image.size = (size_t)(DSP_BPLOADER_ADDR - DSP_BPFW_ADDR);
+
+  if (image_unpack(IMG_BPFW, &image) == NULL) {
+    printf("failed to unpack bpfw\n");
+    return -1;
+  }
+  caches_flush_lines(DSP_BPFW_ADDR, DSP_BPFW_ADDR + image.size);
+  printf("starting dsp fw..\n");
+  if (dsp_start_image(DSP_BPFW_ADDR) == 0) {
+    printf("ok\n");
+  } else {
+    printf("failed\n");
+  }
 }
