@@ -93,7 +93,6 @@ int dsp_start_image(addr_t paddr) {
   dsp_startapp(paddr);
   mu_read(0, &foo);
   mu_read(3, &foo);
-  mu_read(0, &foo);
   mu_dump_mrrs();
   return 0;
 }
