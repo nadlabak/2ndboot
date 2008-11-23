@@ -114,9 +114,8 @@ static int nfc_read_page(uint16_t col, uint32_t row) {
   }
   nfc_send_address(row & 0xff);
   nfc_send_address((row >> 8) & 0xff);
-  if (IS_LARGE_PAGE()) {
-    nfc_send_address((row >> 16) & 0xff);
-  }
+  nfc_send_address((row >> 16) & 0xff);
+
   if (IS_LARGE_PAGE()) {
     nfc_send_command(NAND_CMD_READSTART);
     for (i = 0; i <= 3; ++i) {
