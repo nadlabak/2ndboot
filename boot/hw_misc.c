@@ -8,12 +8,11 @@ int hw_preboot() {
   modify_register32(CRM_AP_BASE_ADDR+0x28, 0, 0x3 << 22);
   modify_register32(CRM_AP_BASE_ADDR+0x34, 0, 0x3 << 16);
 /* Reset USBOTG */
-  write32(0x0, USBOTG_CTRL_BASE_ADDR+0xc);
   write32(0x3f, USBOTG_CTRL_BASE_ADDR+0x10);
   while (read32(USBOTG_CTRL_BASE_ADDR+0x10)) {
   }
-/* Disable USBOTG clocks */
-  modify_register32(CRM_AP_BASE_ADDR+0xc, 1 << 12, 0);
+/* Enable main USBOTG clock */
+  write32(0x1, USBOTG_CTRL_BASE_ADDR+0xc);
 /* Disable SDHC1/2 clocks */
   modify_register32(CRM_AP_BASE_ADDR+0x60, 0, 1 << 0);
   modify_register32(CRM_AP_BASE_ADDR+0x60, 0, 1 << 8);
