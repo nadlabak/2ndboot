@@ -32,12 +32,6 @@ void *atag_build() {
     tag = tag_next(tag);
   }
 
-  tag->hdr.tag = ATAG_MEM;
-  tag->hdr.size = tag_size (tag_mem32);
-  tag->u.mem.start = 0x90000000;
-  tag->u.mem.size = 58*1024*1024;
-  tag = tag_next(tag);
-
   tag->hdr.tag = ATAG_MBM_VERSION;
   tag->hdr.size = tag_size(tag_mbm_version);
   tag->u.mbm_version.mbm_version = 0x1234;
