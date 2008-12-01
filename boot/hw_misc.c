@@ -14,6 +14,9 @@ int hw_preboot() {
   }
 /* Disable USBOTG clocks */
   modify_register32(CRM_AP_BASE_ADDR+0xc, 1 << 12, 0);
+/* Disable SDHC1/2 clocks */
+  modify_register32(CRM_AP_BASE_ADDR+0x60, 0, 1 << 0);
+  modify_register32(CRM_AP_BASE_ADDR+0x60, 0, 1 << 8);
 /* Reset EPIT */
   modify_register32(EPIT1_AP_BASE_ADDR+0x0, 0x1, 0);
   modify_register32(EPIT1_AP_BASE_ADDR+0x0, 0, 0x10000);
