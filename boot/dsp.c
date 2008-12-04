@@ -100,12 +100,11 @@ int dsp_start_image(addr_t paddr) {
 int dsp_reboot() {
   struct memory_image image;
 
-  mu_dsp_reset();
-
   if (image_find(IMG_BPLOADER, &image) == NULL) {
     printf("no bploader, won't reset DSP");
     return -1;
   }
+  mu_dsp_reset();
   if (dsp_mem_write(DSP_BPLOADER_ADDR, image.data, image.size >> 2) < 0) {
     printf("failed to write bploader\n");
     return -1;
