@@ -209,10 +209,7 @@ int main(int argc, char **argv) {
 			}
 			break;
 		} else if (ret != 1) {
-			int c;
-			do {
-				c = getc(fp);
-			} while ((c != EOF) && (c != '\n'));
+			fscanf(fp, "%*[^\n]");
 			continue;
 		}
 		fscanf(fp, "%" STR(MAX_SOURCE_LEN) "s", source);
@@ -232,6 +229,7 @@ int main(int argc, char **argv) {
 			printf("don't know how to handle source %s\n", source);
 			goto out;
 		}
+		fscanf(fp, "%*[^\n]");
 	}
 	fclose(fp);
 	fp = NULL;
