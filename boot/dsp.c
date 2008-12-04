@@ -101,7 +101,7 @@ int dsp_reboot() {
   struct memory_image image;
 
   if (image_find(IMG_BPLOADER, &image) == NULL) {
-    printf("no bploader, won't reset DSP");
+    printf("no bploader, won't reset DSP\n");
     return -1;
   }
   mu_dsp_reset();
