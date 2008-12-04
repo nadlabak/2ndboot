@@ -28,7 +28,6 @@ void *atag_build() {
     } else {
       atag_cmdline[image.size] = '\0';
     }
-    printf("cmdline: %s\n", atag_cmdline);
     tag = tag_next(tag);
   }
 
