@@ -41,6 +41,7 @@ static struct nand_dev_id nand_dev_ids[] = {
   {0x20, 0xb1, 128, 0, 0},
   {0x2c, 0xb1, 128, 0, 0},
   {0x98, 0x72, 128, 512, 0x4000},
+  {0xad, 0x49, 128, 512, 0x4000},
 };
 
 static struct nand_dev device;
