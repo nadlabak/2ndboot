@@ -7,6 +7,7 @@
 #include "hw_misc.h"
 #include "images.h"
 #include "dsp.h"
+#include "atlas.h"
 
 void critical_error(error_t err) {
   if (console_initialized()) {
@@ -23,6 +24,10 @@ int main() {
   printf("e8 loader rev %s.\n", LDR_VERSION);
   image_dump_stats();
 
+  atlas_init();
+  if (atlas_test_io() != 0) {
+    printf("btw, atlas i/o is not working\n");
+  }
   dsp_reboot();
   hw_preboot();
 
