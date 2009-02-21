@@ -20,6 +20,10 @@ static addr_t cspi_modules[] = {
 
 #define CSPI_MAX_MODULE (sizeof cspi_modules / sizeof cspi_modules[0])
 
+static void cspi_enable_clock(int module) {
+  modify_register32(CRM_AP_BASE_ADDR+0x60, 0, (1 << (16 + module*8)));
+}
+
 static int cspi_get_divider(unsigned int data_rate) {
   unsigned int ipg_clk;
   int i;
@@ -68,6 +72,7 @@ int cspi_init(int module, struct cspi_config *cfg) {
   if (clk_divider == -1) {
     return -1;
   }
+  cspi_enable_clock(module);
   base = cspi_modules[module];
   write32(0, CSPI_CONREG(base)); // disable CSPI
   conreg = (cfg->chip_select & 0x3) << 12;
