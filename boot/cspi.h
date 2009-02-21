@@ -14,7 +14,7 @@ struct cspi_config {
 };
 
 int cspi_init(int module, struct cspi_config *cfg);
-int cspi_send(int module, uint32_t *data, size_t len);
-int cspi_recv(int module, uint32_t *buf, size_t size);
+int cspi_send(int module, uint32_t *data, size_t len, unsigned int *timeout);
+int cspi_recv(int module, uint32_t *buf, size_t size, unsigned int *timeout);
 
 #endif // __HW_CSPI_H__

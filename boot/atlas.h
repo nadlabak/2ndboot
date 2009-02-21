@@ -78,6 +78,7 @@ typedef enum
 } atlas_register;
 
 int atlas_init();
+void atlas_set_timeout(unsigned int timeout);
 int atlas_reg_io(atlas_register reg, uint32_t *p, int write);
 int atlas_reg_read(atlas_register reg, uint32_t *v);
 int atlas_reg_modify(atlas_register reg, uint32_t mask, uint32_t v);

@@ -4,8 +4,12 @@
 
 #define ATLAS_CSPI_MODULE 1
 
+static unsigned int g_timeout;
+
 int atlas_init() {
   struct cspi_config cfg;
+  g_timeout = 1000;
+
   cfg.chip_select = 2;
   cfg.data_rate = 4200000;
   cfg.bit_count = 32;
@@ -18,16 +22,17 @@ int atlas_init() {
 
 int atlas_reg_io(atlas_register reg, uint32_t *p, int write) {
   uint32_t outdata, indata;
+  unsigned int timeout = g_timeout;
 
   outdata = (reg & 0x3f) << 0x19;
   if (write) {
     outdata |= *p & 0xffffff;
     outdata |= 1 << 31;
   }
-  if (cspi_send(ATLAS_CSPI_MODULE, &outdata, 1) != 1) {
+  if (cspi_send(ATLAS_CSPI_MODULE, &outdata, 1, &timeout) != 1) {
     return -1;
   }
-  if (cspi_recv(ATLAS_CSPI_MODULE, &indata, 1) != 1) {
+  if (cspi_recv(ATLAS_CSPI_MODULE, &indata, 1, &timeout) != 1) {
     return -2;
   }
   if ((indata >> 0x18) != 0) {
@@ -37,6 +42,10 @@ int atlas_reg_io(atlas_register reg, uint32_t *p, int write) {
     *p = indata & 0xffffff;
   }
   return 0;
+}
+
+void atlas_set_timeout(unsigned int timeout) {
+  g_timeout = timeout;
 }
 
 int atlas_reg_read(atlas_register reg, uint32_t *v) {

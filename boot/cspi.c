@@ -2,6 +2,7 @@
 #include "mxc91231.h"
 #include "common.h"
 #include "cspi.h"
+#include "gpt.h"
 
 #define CSPI_RXDATA(base)    ((base) + 0x00)
 #define CSPI_TXDATA(base)    ((base) + 0x04)
@@ -32,15 +33,25 @@ static int cspi_get_divider(unsigned int data_rate) {
   return -1;
 }
 
-static int cspi_burst(addr_t base) {
+static int cspi_burst(addr_t base, unsigned int *timeout) {
   modify_register32(CSPI_CONREG(base), 0, (1 << 2)); // initiate transfer
   while ((read32(CSPI_CONREG(base)) & (1 << 2)) != 0) {
+    if (*timeout == 0) {
+      return -1;
+    }
+    msleep(1);
+    *timeout -= 1;
   }
   return 0;
 }
 
-static int cspi_wait_rx(addr_t base) {
+static int cspi_wait_rx(addr_t base, unsigned int *timeout) {
   while ((read32(CSPI_STATREG(base)) & (1 << 3)) == 0) {
+    if (*timeout == 0) {
+      return -1;
+    }
+    msleep(1);
+    *timeout -= 1;
   }
   return 0;
 }
@@ -78,7 +89,7 @@ int cspi_init(int module, struct cspi_config *cfg) {
   return 0;
 }
 
-int cspi_send(int module, uint32_t *data, size_t len) {
+int cspi_send(int module, uint32_t *data, size_t len, unsigned int *timeout) {
   addr_t base;
   size_t pushed;
 
@@ -97,14 +108,14 @@ int cspi_send(int module, uint32_t *data, size_t len) {
     write32(data[pushed], CSPI_TXDATA(base));
     if ((CSPI_STATREG(base)) & (1 << 2)) {
       // txfifo full, go ahead
-      cspi_burst(base);
+      cspi_burst(base, timeout);
     }
     pushed++;
   }
   return pushed;
 }
 
-int cspi_recv(int module, uint32_t *buf, size_t size) {
+int cspi_recv(int module, uint32_t *buf, size_t size, unsigned int *timeout) {
   addr_t base;
   size_t popped;
 
@@ -115,7 +126,7 @@ int cspi_recv(int module, uint32_t *buf, size_t size) {
 
   popped = 0;
   while (popped < size) {
-    if (cspi_wait_rx(base) != 0) {
+    if (cspi_wait_rx(base, timeout) != 0) {
       break;
     }
     buf[popped] = read32(CSPI_RXDATA(base));
