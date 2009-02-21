@@ -14,11 +14,11 @@
 #define GPT1_GPTICR2 (GPT1_BASE_ADDR + 0x20)
 #define GPT1_GPTCNT (GPT1_BASE_ADDR + 0x24)
 
-void gpt_disable() {
+static void gpt_disable() {
   modify_register32(GPT1_GPTCR, GPTCR_ENABLE, 0);
 }
 
-void gpt_enable() {
+static void gpt_enable() {
   modify_register32(GPT1_GPTCR, 0, GPTCR_ENABLE);
 }
 
