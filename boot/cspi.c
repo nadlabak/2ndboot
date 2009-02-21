@@ -39,6 +39,12 @@ static int cspi_burst(addr_t base) {
   return 0;
 }
 
+static int cspi_wait_rx(addr_t base) {
+  while ((read32(CSPI_STATREG(base)) & (1 << 3)) == 0) {
+  }
+  return 0;
+}
+
 int cspi_init(int module, struct cspi_config *cfg) {
   addr_t base;
   uint32_t conreg = 0;
@@ -108,7 +114,10 @@ int cspi_recv(int module, uint32_t *buf, size_t size) {
   base = cspi_modules[module];
 
   popped = 0;
-  while ((popped < size) && (read32(CSPI_STATREG(base)) & (1 << 3))) {
+  while (popped < size) {
+    if (cspi_wait_rx(base) != 0) {
+      break;
+    }
     buf[popped] = read32(CSPI_RXDATA(base));
     popped++;
   }
