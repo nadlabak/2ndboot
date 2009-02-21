@@ -47,3 +47,11 @@ void gpt_init() {
   modify_register32(GPT1_GPTCR, 0, GPTCR_FRR);
   write32(0, GPT1_GPTPR);
 }
+
+/* absolutely imprecise */
+void msleep(unsigned int msecs) {
+  uint32_t ticks;
+
+  ticks = (msecs << 5) + (msecs >> 1) + (msecs >> 2) + (msecs >> 6) + (msecs >> 9);
+  gpt_wait(ticks);
+}
