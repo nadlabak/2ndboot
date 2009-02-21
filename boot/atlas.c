@@ -16,7 +16,7 @@ int atlas_init() {
   return cspi_init(ATLAS_CSPI_MODULE, &cfg);
 }  
 
-int atlas_reg_io(int write, atlas_register reg, uint32_t *p) {
+int atlas_reg_io(atlas_register reg, uint32_t *p, int write) {
   uint32_t outdata, indata;
 
   outdata = (reg & 0x3f) << 0x19;
@@ -40,7 +40,7 @@ int atlas_reg_io(int write, atlas_register reg, uint32_t *p) {
 }
 
 int atlas_reg_read(atlas_register reg, uint32_t *v) {
-  return atlas_reg_io(0, reg, v);
+  return atlas_reg_io(reg, v, 0);
 }
 
 int atlas_reg_modify(atlas_register reg, uint32_t mask, uint32_t v) {
@@ -55,7 +55,7 @@ int atlas_reg_modify(atlas_register reg, uint32_t mask, uint32_t v) {
     return ret;
   }
   foo = (foo & (~mask)) | v;
-  return atlas_reg_io(1, reg, &foo);
+  return atlas_reg_io(reg, &foo, 1);
 }
 
 int atlas_reg_write(atlas_register reg, uint32_t v) {
