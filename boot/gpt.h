@@ -4,7 +4,6 @@
 
 void gpt_init();
 void gpt_reset();
-void gpt_wait(uint32_t ticks);
 void msleep(unsigned int ms);
 
 #endif // __HW_GPT_H__

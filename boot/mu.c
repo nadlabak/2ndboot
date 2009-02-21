@@ -32,7 +32,7 @@ static void mu_assert_dsp_running() {
     if (mu_dsp_power_state() == 0) {
       return;
     }
-    gpt_wait(1);
+    msleep(1);
   }
   critical_error(DSP_IS_NOT_RUNNING);
 }

@@ -27,7 +27,7 @@ void gpt_reset() {
   while (read32(GPT1_GPTCR) & GPTCR_SWR);
 }
 
-void gpt_wait(uint32_t ticks) {
+static void gpt_wait(uint32_t ticks) {
   write32(ticks, GPT1_GPTOCR1);
   gpt_enable();
   while ((read32(GPT1_GPTSR) & GPTSR_OF1) == 0);
