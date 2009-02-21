@@ -67,3 +67,20 @@ int atlas_reg_partial(atlas_register reg, uint32_t mask, uint32_t data) {
   data &= 0xffffff;
   return atlas_reg_modify(reg, ~mask, data);
 }
+
+int atlas_test_io() {
+  int ret;
+  uint32_t orig, v;
+
+  ret = atlas_reg_read(ATLAS_REG_MEMORY_B, &orig);
+  if (ret != 0) {
+    return -1;
+  }
+  atlas_reg_write(ATLAS_REG_MEMORY_B, 0x123456);
+  atlas_reg_read(ATLAS_REG_MEMORY_B, &v);
+  if ((v & 0xffffff) != 0x123456) {
+    ret = -2;
+  }
+  atlas_reg_write(ATLAS_REG_MEMORY_B, orig);
+  return ret;
+}
