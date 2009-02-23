@@ -68,13 +68,7 @@ int atlas_reg_modify(atlas_register reg, uint32_t mask, uint32_t v) {
 }
 
 int atlas_reg_write(atlas_register reg, uint32_t v) {
-  return atlas_reg_modify(reg, 0, v);
-}
-
-int atlas_reg_partial(atlas_register reg, uint32_t mask, uint32_t data) {
-  mask &= 0xffffff;
-  data &= 0xffffff;
-  return atlas_reg_modify(reg, ~mask, data);
+  return atlas_reg_modify(reg, 0xffffff, v);
 }
 
 int atlas_test_io() {
