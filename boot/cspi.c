@@ -96,7 +96,7 @@ int cspi_init(int module, struct cspi_config *cfg) {
 
 int cspi_send(int module, uint32_t *data, size_t len, unsigned int *timeout) {
   addr_t base;
-  size_t pushed;
+  size_t pushed, sent;
 
   if (module > CSPI_MAX_MODULE) {
     return -1;
@@ -109,15 +109,20 @@ int cspi_send(int module, uint32_t *data, size_t len, unsigned int *timeout) {
   }
 
   pushed = 0;
-  while (pushed < len) {
-    write32(data[pushed], CSPI_TXDATA(base));
-    if ((CSPI_STATREG(base)) & (1 << 2)) {
-      // txfifo full, go ahead
-      cspi_burst(base, timeout);
-    }
+  sent = 0;
+  while (sent < len) {
+    write32(data[sent + pushed], CSPI_TXDATA(base));
     pushed++;
+    if ((sent + pushed == len) || (read32(CSPI_STATREG(base)) & (1 << 2))) {
+      // txfifo full, go ahead
+      if (cspi_burst(base, timeout) != 0) {
+	break;
+      }
+      sent += pushed;
+      pushed = 0;
+    }
   }
-  return pushed;
+  return sent;
 }
 
 int cspi_recv(int module, uint32_t *buf, size_t size, unsigned int *timeout) {
