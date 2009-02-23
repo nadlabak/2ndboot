@@ -16,7 +16,7 @@ int atlas_init() {
   cfg.active_high_ss_polarity = 1;
   cfg.ss_waveform = 1;
   cfg.phase = 0;
-  cfg.active_high_clk_polarity = 1;
+  cfg.active_high_clk_polarity = 0;
   return cspi_init(ATLAS_CSPI_MODULE, &cfg);
 }  
 
