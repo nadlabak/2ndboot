@@ -79,9 +79,9 @@ int atlas_test_io() {
   if (ret != 0) {
     return -1;
   }
-  atlas_reg_write(ATLAS_REG_MEMORY_B, 0x123456);
+  atlas_reg_write(ATLAS_REG_MEMORY_B, 0x01dead);
   atlas_reg_read(ATLAS_REG_MEMORY_B, &v);
-  if ((v & 0xffffff) != 0x123456) {
+  if ((v & 0xffffff) != 0x01dead) {
     ret = -2;
   }
   atlas_reg_write(ATLAS_REG_MEMORY_B, orig);
