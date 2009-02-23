@@ -28,7 +28,7 @@ static int cspi_get_divider(unsigned int data_rate) {
   unsigned int ipg_clk;
   int i;
 
-  ipg_clk = clock_get("ipg_clk");
+  ipg_clk = clock_get("ipg");
   for (i = 0; i < 7; ++i) {
     if ((ipg_clk >> 2 + i) <= data_rate) {
       return i;
