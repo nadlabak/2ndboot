@@ -21,7 +21,7 @@ static addr_t cspi_modules[] = {
 #define CSPI_MAX_MODULE (sizeof cspi_modules / sizeof cspi_modules[0])
 
 static void cspi_enable_clock(int module) {
-  modify_register32(CRM_AP_BASE_ADDR+0x60, 0, (1 << (16 + module*8)));
+  modify_register32(CRM_AP_BASE_ADDR+0x10, 7, 4);
 }
 
 static int cspi_get_divider(unsigned int data_rate) {
