@@ -30,7 +30,7 @@ int iomux_set_function(int iomux, unsigned int pin, unsigned int infunc, unsigne
   if ((outfunc > 7) || (infunc > 3)) {
     return -1;
   }
-  base = iomuxes[iomux].base + (pin >> 2);
+  base = iomuxes[iomux].base + (pin & ~0x3);
   shift = (pin & 3) << 3;
   v = read32(base);
   v &= ~(0xff << shift);
