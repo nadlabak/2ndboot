@@ -3,6 +3,8 @@
 #include "types.h"
 #include "buffers.h"
 
+#define KERNEL_DEST	0x83000000	
+
 struct memory_image {
   void *data;
   size_t size;

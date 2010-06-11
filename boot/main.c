@@ -8,6 +8,9 @@
 #include "images.h"
 #include "dsp.h"
 #include "atlas.h"
+#include "images.h"
+
+#define ARCH_NUMBER 2196
 
 void critical_error(error_t err) {
   if (console_initialized()) {
@@ -16,23 +19,27 @@ void critical_error(error_t err) {
   while (1);
 }
 
+void __attribute__((__naked__)) enter_kernel(int zero, int arch, int *atags, int kern_addr) {
+    __asm__ volatile (
+        "bx r3\n"
+    );
+}
+
+
 int main() {
   struct memory_image image;
   
   image_complete();
 
-  printf("e8 loader rev %s.\n", LDR_VERSION);
+  printf("milestone loader rev %s.\n", LDR_VERSION);
   image_dump_stats();
 
-  atlas_init();
-  if (atlas_test_io() != 0) {
-    printf("btw, atlas i/o is not working\n");
-  }
-  dsp_reboot();
-  hw_preboot();
+  //dsp_reboot();
+  //hw_preboot();
 
   if (image_find(IMG_LINUX, &image) != NULL) {
-    jump_to_linux(image.data, 1024, atag_build());
+    enter_kernel(0, ARCH_NUMBER, atag_build(), KERNEL_DEST);
+    //jump_to_linux(image.data, 1024, atag_build());
   } else {
     critical_error(IMG_NOT_PROVIDED);
   }

@@ -6,7 +6,7 @@
 #include "hboot.h"
 #include "crc32.h"
 
-#define GOOD_ADDRESS(p)		    (__pa(p) >= 0x92000000)
+#define GOOD_ADDRESS(p)		    (__pa(p) >= 0x88c00000)
 
 #define CHUNK_SIZE_ORDER	    0
 #define PAGES_PER_CHUNK		    (1 << CHUNK_SIZE_ORDER)
@@ -220,13 +220,14 @@ static int append_scattered_buffer(struct scattered_buffer *sc, const char __use
 	chunk_off = (uint32_t)pos % sc->chunk_size;
 	while (written < size) {
 		cur_size = min(size, sc->chunk_size - chunk_off);
-		copy_from_user((char*)sc->chunks[chunk] + chunk_off, data + written, cur_size);
-		if (BUFFER_ATTRS(sc) & B_ATTR_VERIFY) {
-			crc32_update(&BUFFER_CHECKSUM(sc), (const uint8_t*)sc->chunks[chunk] + chunk_off, cur_size);
+		if (!copy_from_user((char*)sc->chunks[chunk] + chunk_off, data + written, cur_size)) {
+			if (BUFFER_ATTRS(sc) & B_ATTR_VERIFY) {
+				crc32_update(&BUFFER_CHECKSUM(sc), (const uint8_t*)sc->chunks[chunk] + chunk_off, cur_size);
+			}
+			written += cur_size;
+			chunk++;
+			chunk_off = 0;
 		}
-		written += cur_size;
-		chunk++;
-		chunk_off = 0;
 	}
 	return written;
 }
@@ -258,11 +259,13 @@ static int append_plain_buffer(struct plain_buffer *pb, const char __user *data,
 	if (BUFFER_SIZE(pb) < pos + size) {
 		size = BUFFER_SIZE(pb) - pos;
 	}
-	copy_from_user((char*)pb->data + pos, data, size);
-	if (BUFFER_ATTRS(pb) & B_ATTR_VERIFY) {
-		crc32_update(&BUFFER_CHECKSUM(pb), (char*)pb->data + pos, size);
-	}
-	return (int)size;
+
+	if (!copy_from_user((char*)pb->data + pos, data, size)) {
+		if (BUFFER_ATTRS(pb) & B_ATTR_VERIFY) {
+			crc32_update(&BUFFER_CHECKSUM(pb), (char*)pb->data + pos, size);
+		}
+		return (int)size;
+	} else return 0;
 }
 
 static struct nand_buffer *allocate_nand_buffer(uint32_t bufsize, uint32_t rest) {

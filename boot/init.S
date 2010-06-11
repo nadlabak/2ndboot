@@ -1,5 +1,4 @@
 #include "buffers.h"
-#include "mxc91231.h"
 .extern buffers_list
 .extern font_8x8
 .align 4
@@ -26,7 +25,7 @@
  */
 	cpsid   ifa
 	sub	r14, r15, #0xc         @ virt addr of entry point
-	sub	r14, r14, #0x30000000
+	sub	r14, r14, #0x3f400000
 
 	mov	r3, #0
 
@@ -36,7 +35,7 @@
 	flush_tlb r2
 	
 	sub	r2, pc, #0             @ now we are switching to physical adress for smooth mmu turnoff.
-	sub	pc, r2, #0x30000000
+	sub	pc, r2, #0x3f400000
 
 	b	__with_mmu             @ at that place, pc is physical.
 
@@ -90,11 +89,6 @@ __with_mmu:
 	bl	fixup_got
 	bl	clean_bss
 	
-	bl	font_init
-	ldr	r0, p_font_8x8
-	bl	console_init
-	bl	gpt_init
-	bl	nfc_init
 __buffers_loop:
 	subs	r6, r6, #1
 	bmi	__buffers_end
@@ -235,16 +229,16 @@ unpack_plain:
 
 unpack_nand:
 	stmfd	sp!, {r4, lr}
-	ldr	r1, [r1]
-	mov	r4, r2
-	bl	nfc_read_data
-	cmp	r4, r0
-	movne	r0, #B_STAT_ERROR
-	moveq	r0, #B_STAT_COMPLETED
+@	ldr	r1, [r1]
+@	mov	r4, r2
+@	bl	nfc_read_data
+@	cmp	r4, r0
+@	movne	r0, #B_STAT_ERROR
+@	moveq	r0, #B_STAT_COMPLETED
 	ldmfd	sp!, {r4, pc}
 	
 _start:
-	b	__main
+	b	__turn_off_mmu
 
 got_start:
 	.word	__got_start__
@@ -255,17 +249,17 @@ bss_start:
 bss_end:
 	.word	__bss_end__
 sp_svc:
-	.word	0x92000000
+	.word	0x88c00000
 sp_sys:
-	.word	0x91f80000
+	.word	0x88b00000
 sp_und:
-	.word	0x91f7f000
+	.word	0x88a00000
 sp_abt:
-	.word	0x91f7e000
+	.word	0x88900000
 sp_fiq:
-	.word	0x91f7d000
+	.word	0x88800000
 sp_irq:
-	.word	0x91f7c000
+	.word	0x88700000
 
 __main:
 	cps     #0x1f @ system
@@ -281,30 +275,6 @@ __main:
 	cps     #0x13  @ supervisor
 
 	bl	main
-	b	__forever
-
-/* r0 - PA of start
-   r1 - PA of end 
-*/
-caches_flush_lines:
-	mov	r2, #0
-	
-	barrier	r2
-	tst	r1, #(L1_LINE_LENGTH-1)
-	addeq	r2, r1, #L1_LINE_LENGTH
-	movne	r2, r1
-	mcrr	p15, 0, r2, r0, c14    @ clean and invalidate L1DC range
-	mov	r2, #L2CC_BASE_ADDR
-	add	r2, r2, #0x7f0         @ clean and invalidate L2C line by PA
-
-	bic	r0, r0, #(L2_LINE_LENGTH-1)
-__l2_flush_range:
-	cmp	r0, r1
-	strlo	r0, [r2]
-	addlo	r0, r0, #L2_LINE_LENGTH
-	blo	__l2_flush_range
-	
-	bx	lr
 
 /* Promises not to touch r0-r3 */
 __turn_off_mmu:
@@ -312,48 +282,20 @@ __turn_off_mmu:
 
 	barrier r4
 	mcr     p15, 0, r4, c13, c0, 0 @ set zero PID
-	mcr     p15, 0, r4, c7, c10, 0 @ clean D cache
-	mov	r5, #L2CC_BASE_ADDR
-
-	ldr	r6, [r5, #0x100]       @ disable L2 cache
-	bic	r6, r6, #0x1
-	str	r6, [r5, #0x100]
-
-	mov	r6, #0xff
-	str	r6, [r5, #0x7fc]       @ request L2 cache clean and invalidation
-__l2_flush_whole:
-	ldr	r6, [r5, #0x7fc]       @ and wait for it.
-	cmp	r6, #0
-	bne	__l2_flush_whole
-
 	mcr     p15, 0, r4, c7, c5,  0 @ invalidate I cache
-
 	mrc     p15, 0, r5, c1, c0, 0
 	bic     r5, r5, #0x0005        @ -dcache & -mmu
+	bic	r5, r5, #0x1000	       @ -icache
 	mcr     p15, 0, r5, c1, c0, 0
 
 	mcr     p15, 0, r4, c7, c5, 4  @ flush prefetch buffer
 	cpwait 	r4
 
 	mcr     p15, 0, r4, c7, c5, 0  @ invalidate I cache
-	mcr     p15, 0, r4, c7, c6, 0  @ invalidate D cache
 	mcr     p15, 0, r4, c8, c5, 0  @ invalidate ITLB
 	mcr     p15, 0, r4, c8, c6, 0  @ invalidate DTLB
 	
-	bx	lr
-
-/* r0 - image base addr
-   r1 - arch
-   r2 - atag list
-*/
-	
-jump_to_linux:
-	bl	__turn_off_mmu
-	mov	r3, r0
-	mov	r0, #0
-	bx	r3
-__forever:
-	b	__forever
+	b	__main
 
 .global _start
 .global jump_to_linux

@@ -9,6 +9,8 @@
 void *atag_build() {
   struct memory_image image;
   struct tag *tag = (struct tag*)ATAG_BASE_ADDR;
+
+  printf("building atags\n");
 	
   tag->hdr.tag = ATAG_CORE;
   tag->hdr.size = tag_size (tag_core);
@@ -49,18 +51,6 @@ void *atag_build() {
     tag->hdr.size = tag_size(tag_initrd);
     tag->u.initrd.start = (u32)image.data;
     tag->u.initrd.size = (u32)image.size;
-    tag = tag_next(tag);
-  }
-
-  if (image_find(IMG_USBFW, &image) != NULL) {
-    tag->hdr.tag = ATAG_USB_FIRMWARE_ADDRESS;
-    tag->hdr.size = tag_size (tag_usb_firmware_address);
-    tag->u.usb_firmware_address.usb_firmware_address = (u32)image.data;
-    tag = tag_next(tag);
-
-    tag->hdr.tag = ATAG_USB_FIRMWARE_SIZE;
-    tag->hdr.size = tag_size (tag_usb_firmware_size);
-    tag->u.usb_firmware_size.usb_firmware_size = (u32)image.size;
     tag = tag_next(tag);
   }
 

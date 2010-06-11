@@ -93,8 +93,8 @@ static int skip_atoi(const char **s)
 
 #define do_div(n,base) ({ \
 int __res; \
-__res = ((unsigned long) n) % (unsigned) base; \
-n = ((unsigned long) n) / (unsigned) base; \
+__res = n&0x0f;/*((unsigned long) n) % (unsigned) base;*/ \
+n = n>>4; /*((unsigned long) n) / (unsigned) base;*/ \
 __res; })
 
 

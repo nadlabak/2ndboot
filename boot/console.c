@@ -4,6 +4,7 @@
 #include "string.h"
 #include "ipu.h"
 #include "error.h"
+#include "common.h"
 
 #define LINE_INTERVAL 0
 #pragma pack(push,1)
@@ -130,11 +131,19 @@ void console_setfont(struct font *f) {
 }
 
 int putchar(int c) {
-  if (c == '\n') {
+/*  if (c == '\n') {
     console_newline(console_font);
   } else {
     console_assert_newline(console_font);
     draw_symbol(&sdc_screen.current_x, &sdc_screen.current_y, (unsigned char)c, console_font);
+  }*/
+  while (read32(0x49020044)!=0);
+  if (c =='\n') {
+	write32(0x0d, 0x49020000);
+  	while (read32(0x49020044)!=0);
+	write32(0x0a, 0x49020000);
+  } else {
+	write32(c, 0x49020000);
   }
   return (unsigned char)c;
 }

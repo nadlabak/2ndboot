@@ -1,15 +1,49 @@
 #include <asm/uaccess.h>
 #include <asm/cacheflush.h>
+#include <asm/tlbflush.h>
+#include <asm/io.h>
 #include <linux/module.h>
 #include <linux/fs.h>
-#include <linux/devfs_fs_kernel.h>
+#include <linux/cdev.h>
 #include "hboot.h"
 #define CTRL_DEVNAME "hbootctrl"
 static int dev_major;
 
+void v7_flush_kern_cache_all(void);//c0045dd4
+void activate_emu_uart(void);
+
 // will _never_ return
 int __attribute__((__naked__)) do_branch(void *bootlist, uint32_t bootsize, uint32_t new_ttbl, void *func) {
 	__asm__ volatile (
+		"stmfd  sp!, {r0-r3}\n"
+	);
+
+        activate_emu_uart();
+	__raw_writel(0x02, 0xd9020054);  //reset uart
+	while (!(__raw_readl(0xd9020058)&1));
+	__raw_writel(0x80, 0xd902000c); // setup divisors
+	__raw_writel(0x1a, 0xd9020000);
+	__raw_writel(0x00, 0xd9020004);
+	__raw_writel(0x03, 0xd902000c); // 8 data bits
+	__raw_writel(0x00, 0xd9020020);
+
+	__raw_writel(__raw_readl(0xD805602C)|2, 0xD805602C);//sdma reset
+	while (__raw_readl(0xD8056028)!=1);
+
+	local_flush_tlb_all();
+	v7_flush_kern_cache_all();
+	__asm__ volatile (
+		"mov    r0, #0x00\n"
+		"mcr    p15, 0, r0, c7, c5, 0\n"
+		"mcr    p15, 0, r0, c7, c5, 6\n"
+		"mrc    p15, 0, r0, c1, c0, 0\n"
+		"bic    r0, r0, #0x1800\n" //-i -z
+		"bic    r0, r0, #0x0006\n" //-c -a
+		"mcr    p15, 0, r0, c1, c0, 0\n"
+		"mrc    p15, 0, r0, c1, c0, 1\n"
+		"bic    r0, #0x02\n"
+		"mcr    p15, 0, r0, c1, c0, 1\n"
+		"ldmfd  sp!, {r0-r3}\n"
 		"bx r3\n"
 	);
 	return 0;
@@ -29,15 +63,8 @@ static void l1_map(uint32_t *table, uint32_t phys, uint32_t virt, size_t sects, 
 #define L1_DEVICE_MAPPING (PMD_TYPE_SECT | PMD_SECT_AP_WRITE | PMD_SECT_UNCACHED)
 void build_l1_table(uint32_t *table) {
 	memset(table, 0, 4*4096);
-	l1_map(table, PHYS_OFFSET, PHYS_OFFSET, 64, L1_NORMAL_MAPPING);
-	l1_map(table, PHYS_OFFSET, PAGE_OFFSET, 64, L1_NORMAL_MAPPING);
-	l1_map(table, L2CC_BASE_ADDR, L2CC_BASE_ADDR, 1, L1_DEVICE_MAPPING);
-	l1_map(table, AIPS1_BASE_ADDR, AIPS1_BASE_ADDR, 16, L1_DEVICE_MAPPING);
-	l1_map(table, AIPS2_BASE_ADDR, AIPS2_BASE_ADDR, 16, L1_DEVICE_MAPPING);
-	l1_map(table, SPBA0_BASE_ADDR, SPBA0_BASE_ADDR, 16, L1_DEVICE_MAPPING);
-	l1_map(table, SPBA1_BASE_ADDR, SPBA1_BASE_ADDR, 16, L1_DEVICE_MAPPING);
-	l1_map(table, X_MEMC_BASE_ADDR, X_MEMC_BASE_ADDR, 1, L1_DEVICE_MAPPING);
-	l1_map(table, FB_RAM_BASE_ADDR, FB_RAM_BASE_ADDR, 4, L1_DEVICE_MAPPING);
+        l1_map(table, PHYS_OFFSET, PHYS_OFFSET, 256-12, L1_NORMAL_MAPPING);
+        l1_map(table, PHYS_OFFSET, PAGE_OFFSET, 256-12, L1_NORMAL_MAPPING);
 }
 
 int hboot_boot(int handle) {
@@ -168,7 +195,6 @@ int __init hboot_init(void) {
 	}
 	dev_major = ret;
 
-	ret = devfs_mk_cdev(MKDEV(dev_major, 0), S_IFCHR | S_IRUSR | S_IWUSR, CTRL_DEVNAME);
 	if (ret < 0) {
 		printk(KERN_WARNING CTRL_DEVNAME ": Failed to create dev\n");
 		unregister_chrdev(dev_major, CTRL_DEVNAME);
@@ -184,7 +210,6 @@ void __exit hboot_exit(void) {
 	if (dev_major) {
 		buffers_destroy();
 		unregister_chrdev(dev_major, CTRL_DEVNAME);
-		devfs_remove(CTRL_DEVNAME);
 	}
 	return;
 }
