@@ -18,7 +18,7 @@ int __attribute__((__naked__)) do_branch(void *bootlist, uint32_t bootsize, uint
 		"stmfd  sp!, {r0-r3}\n"
 	);
 
-        activate_emu_uart();
+//        activate_emu_uart();
 	__raw_writel(0x02, 0xd9020054);  //reset uart
 	while (!(__raw_readl(0xd9020058)&1));
 	__raw_writel(0x80, 0xd902000c); // setup divisors
