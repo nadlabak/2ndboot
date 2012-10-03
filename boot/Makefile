@@ -1,7 +1,7 @@
-PREFIX		 = /mnt/hd/arm-android-linux-uclibcgnueabi/bin/arm-android-linux-uclibcgnueabi
-CFLAGS		:= -fno-stack-protector -fno-builtin -nostdinc -fPIC -D__LOADER__ -Os -D__PLAT_TI_OMAP3430__
+PREFIX		 = /mnt/old/home/nadla/cm9/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi
+CFLAGS		:= -mcpu=cortex-a8 -march=armv7-a -mtune=cortex-a8 -mfpu=vfpv3 -fno-stack-protector -fno-builtin -nostdinc -fPIC -D__LOADER__ -Os -D__PLAT_TI_OMAP3430__
 LDFLAGS		:= -static -nostdlib -fPIC
-ASFLAGS		:= -c -x assembler-with-cpp -D__LOADER__ -D__PLAT_TI_OMAP3430__
+ASFLAGS		:= -c -x assembler-with-cpp -mcpu=cortex-a8 -march=armv7-a -mtune=cortex-a8 -mfpu=vfpv3 -D__LOADER__ -D__PLAT_TI_OMAP3430__
 
 ELF_TARGET	 = boot.elf
 RAW_TARGET	 = boot

@@ -33,8 +33,8 @@ int main() {
 
   printf("milestone loader rev %s.\n", LDR_VERSION);
   image_dump_stats();
-  printf("resetting bp\n");
-  write32(3, 0x48306A50);
+  //printf("resetting bp\n");
+  //write32(3, 0x48306A50);
   //write32(2, 0x480C7010);
   write32(2, 0x48200010);
   while(!(read32(0x48200014)&1));
