@@ -19,16 +19,9 @@ int __attribute__((__naked__)) do_branch(void *bootlist, uint32_t bootsize, uint
 	);
 
 //        activate_emu_uart();
-	__raw_writel(0x02, 0xd9020054);  //reset uart
-	while (!(__raw_readl(0xd9020058)&1));
-	__raw_writel(0x80, 0xd902000c); // setup divisors
-	__raw_writel(0x1a, 0xd9020000);
-	__raw_writel(0x00, 0xd9020004);
-	__raw_writel(0x03, 0xd902000c); // 8 data bits
-	__raw_writel(0x00, 0xd9020020);
 
-	__raw_writel(__raw_readl(0xD805602C)|2, 0xD805602C);//sdma reset
-	while (__raw_readl(0xD8056028)!=1);
+	__raw_writel(__raw_readl(0xFA05602C)|2, 0xFA05602C); //sdma reset
+	while (__raw_readl(0xFA056028)!=1);
 
 	local_flush_tlb_all();
 	v7_flush_kern_cache_all();
