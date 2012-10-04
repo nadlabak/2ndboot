@@ -4,50 +4,50 @@
 #include "atag.h"
 #include "common.h"
 #include "memory.h"
-#include "hw_misc.h"
-#include "images.h"
-#include "dsp.h"
-#include "atlas.h"
 #include "images.h"
 
-#define ARCH_NUMBER 2196
+#define ARCH_NUMBER 2241
 
-void critical_error(error_t err) {
-  if (console_initialized()) {
-    printf("Critical error %d\n", (int)err);
-  }
-  while (1);
+#define INTCPS_SYSCONFIG 0x48200010
+#define INTCPS_SYSSTATUS 0x48200014
+
+void critical_error(error_t err)
+{
+	printf("Critical error %d\n", (int)err);
+	while (1);
 }
 
-void __attribute__((__naked__)) enter_kernel(int zero, int arch, int *atags, int kern_addr) {
-    __asm__ volatile (
-        "bx r3\n"
-    );
+void __attribute__((__naked__)) enter_kernel(int zero, int arch, void *atags, int kern_addr) 
+{
+	__asm__ volatile (
+		"bx r3\n"
+	);
 }
 
+int main() 
+{
+	void* atags;
+	struct memory_image image;
+	
+	printf("=== HBOOT START ===\n");
 
-int main() {
-  struct memory_image image;
-  
-  image_complete();
+	/* Complete images */
+	image_complete();
+	
+	/* SW reset */
+	write32(2, INTCPS_SYSCONFIG);
+	while(!(read32(INTCPS_SYSSTATUS) & 1));
 
-  printf("milestone loader rev %s.\n", LDR_VERSION);
-  image_dump_stats();
-  //printf("resetting bp\n");
-  //write32(3, 0x48306A50);
-  //write32(2, 0x480C7010);
-  write32(2, 0x48200010);
-  while(!(read32(0x48200014)&1));
-
-  //dsp_reboot();
-  //hw_preboot();
-
-  if (image_find(IMG_LINUX, &image) != NULL) {
-    enter_kernel(0, ARCH_NUMBER, atag_build(), KERNEL_DEST);
-    //jump_to_linux(image.data, 1024, atag_build());
-  } else {
-    critical_error(IMG_NOT_PROVIDED);
-  }
+	if (image_find(IMG_LINUX, &image) != NULL)
+	{
+		printf("KERNEL FOUND!\n");
+		atags = atag_build();
+		
+		printf("BOOTING KERNEL!\n");
+		enter_kernel(0, ARCH_NUMBER, atags, KERNEL_DEST);
+	}
+	else 
+		critical_error(IMG_NOT_PROVIDED);
 
   return 0;
 }

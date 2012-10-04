@@ -45,20 +45,21 @@
  *
  * ********************************************************************/
 
-int vprintf(const char *fmt, va_list args) {
-  static char print_buffer[PRINTF_BUFFER_SIZE];
-  vsprintf(print_buffer, fmt, args);
-  return puts(print_buffer);
+int vprintf(const char *fmt, va_list args) 
+{
+	static char print_buffer[PRINTF_BUFFER_SIZE];
+	vsprintf(print_buffer, fmt, args);
+	return puts(print_buffer);
 }
 
 int printf(const char *fmt, ...)
 {
-  int ret;
-    va_list args;
+	int ret;
+	va_list args;
 
-    va_start(args, fmt);
-    ret = vprintf(fmt, args);
-    va_end(args);
+	va_start(args, fmt);
+	ret = vprintf(fmt, args);
+	va_end(args);
 
-    return ret;
+	return ret;
 }

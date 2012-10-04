@@ -31,7 +31,8 @@
 /* The list ends with an ATAG_NONE node. */
 #define ATAG_NONE	0x00000000
 
-struct tag_header {
+struct tag_header 
+{
 	u32 size;
 	u32 tag;
 };
@@ -39,7 +40,8 @@ struct tag_header {
 /* The list must start with an ATAG_CORE node */
 #define ATAG_CORE	0x54410001
 
-struct tag_core {
+struct tag_core 
+{
 	u32 flags;		/* bit 0 = read-only */
 	u32 pagesize;
 	u32 rootdev;
@@ -48,7 +50,8 @@ struct tag_core {
 /* it is allowed to have multiple ATAG_MEM nodes */
 #define ATAG_MEM	0x54410002
 
-struct tag_mem32 {
+struct tag_mem32 
+{
 	u32	size;
 	u32	start;	/* physical start address */
 };
@@ -56,7 +59,8 @@ struct tag_mem32 {
 /* VGA text type displays */
 #define ATAG_VIDEOTEXT	0x54410003
 
-struct tag_videotext {
+struct tag_videotext 
+{
 	u8		x;
 	u8		y;
 	u16		video_page;
@@ -71,7 +75,8 @@ struct tag_videotext {
 /* describes how the ramdisk will be used in kernel */
 #define ATAG_RAMDISK	0x54410004
 
-struct tag_ramdisk {
+struct tag_ramdisk 
+{
 	u32 flags;	/* bit 0 = load, bit 1 = prompt */
 	u32 size;	/* decompressed ramdisk size in _kilo_ bytes */
 	u32 start;	/* starting block of floppy-based RAM disk image */
@@ -87,7 +92,8 @@ struct tag_ramdisk {
 /* describes where the compressed ramdisk image lives (physical address) */
 #define ATAG_INITRD2	0x54420005
 
-struct tag_initrd {
+struct tag_initrd 
+{
 	u32 start;	/* physical start address */
 	u32 size;	/* size of compressed ramdisk image in bytes */
 };
@@ -95,7 +101,8 @@ struct tag_initrd {
 /* board serial number. "64 bits should be enough for everybody" */
 #define ATAG_SERIAL	0x54410006
 
-struct tag_serialnr {
+struct tag_serialnr 
+{
 	u32 low;
 	u32 high;
 };
@@ -103,7 +110,8 @@ struct tag_serialnr {
 /* board revision */
 #define ATAG_REVISION	0x54410007
 
-struct tag_revision {
+struct tag_revision 
+{
 	u32 rev;
 };
 
@@ -112,7 +120,8 @@ struct tag_revision {
  */
 #define ATAG_VIDEOLFB	0x54410008
 
-struct tag_videolfb {
+struct tag_videolfb 
+{
 	u16		lfb_width;
 	u16		lfb_height;
 	u16		lfb_depth;
@@ -132,14 +141,16 @@ struct tag_videolfb {
 /* command line: \0 terminated string */
 #define ATAG_CMDLINE	0x54410009
 
-struct tag_cmdline {
+struct tag_cmdline 
+{
 	char	cmdline[1];	/* this is the minimum size */
 };
 
 /* acorn RiscPC specific information */
 #define ATAG_ACORN	0x41000101
 
-struct tag_acorn {
+struct tag_acorn 
+{
 	u32 memc_control_reg;
 	u32 vram_pages;
 	u8 sounddefault;
@@ -149,26 +160,30 @@ struct tag_acorn {
 /* TI OMAP specific information */
 #define ATAG_OMAP       0x414f4d50
 
-struct tag_omap {
+struct tag_omap 
+{
 	u8 data[0];
 };
 
 /* footbridge memory clock, see arch/arm/mach-footbridge/arch.c */
 #define ATAG_MEMCLK	0x41000402
 
-struct tag_memclk {
+struct tag_memclk 
+{
 	u32 fmemclk;
 };
 
 #define ATAG_POWERUP_REASON 0xf1000401
 
-struct tag_powerup_reason {
+struct tag_powerup_reason 
+{
 	u32 powerup_reason;
 };
 
 /* ipu_buffer_address */
 #define ATAG_IPU_BUFFER_ADDRESS 0xf1000402
-struct tag_ipu_buffer_address{
+struct tag_ipu_buffer_address
+{
 	u32 ipu_buffer_address;
 };
 
@@ -180,50 +195,58 @@ struct tag_is_ipu_initialized{
 
 /* gpu_context */
 #define ATAG_GPU_CONTEXT 0xf1000404
-struct tag_gpu_context{
+struct tag_gpu_context
+{
 	u32 gpu_context;
 };
 
 /* Address of USB HS firmware */
 #define ATAG_USB_FIRMWARE_ADDRESS 0xf1000405
-struct tag_usb_firmware_address {
+struct tag_usb_firmware_address 
+{
 	u32 usb_firmware_address;
 };
 
 /* Size of USB HS firmware partition */
 #define ATAG_USB_FIRMWARE_SIZE 0xf1000406
-struct tag_usb_firmware_size {
+struct tag_usb_firmware_size 
+{
 	u32 usb_firmware_size;
 };
 
 /* MBM version */
 #define ATAG_MBM_VERSION 0xf1000407
-struct tag_mbm_version {
+struct tag_mbm_version 
+{
 	u32 mbm_version;
 };
 
 /* MBM loader version */
 #define ATAG_MBM_LOADER_VERSION 0xf1000408
-struct tag_mbm_loader_version {
+struct tag_mbm_loader_version 
+{
 	u32 mbm_loader_version;
 };
 
 /* Boardid */
 #define ATAG_BOARDID 0xf1000409
-struct tag_boardid {
+struct tag_boardid 
+{
 	u32 boardid;
 };
 
 /* Flat dev tree address */
 #define ATAG_FLAT_DEV_TREE_ADDRESS 0xf100040A
-struct tag_flat_dev_tree_address {
+struct tag_flat_dev_tree_address 
+{
 	u32 flat_dev_tree_address;
 	u32 flat_dev_tree_size;
 };
 
 /* Flashing completed */
 #define ATAG_FLASHING_COMPLETED 0xf100040B
-struct tag_flashing_completed {
+struct tag_flashing_completed 
+{
 	u32 flashing_completed;
 };
 
@@ -231,7 +254,8 @@ struct tag_flashing_completed {
 #define MOT_LOGO_VERSION_SIZE_OLD	24
 #define MOT_LOGO_VERSION_SIZE		128
 #define ATAG_LOGO_VERSION 0xf100040C
-struct tag_logo_version {
+struct tag_logo_version 
+{
 	u8 * logo_version;
 	u8   logo_version_string[MOT_LOGO_VERSION_SIZE_OLD];
 	u32  logo_version_max_length;
@@ -239,27 +263,31 @@ struct tag_logo_version {
 
 /* Memory type */
 #define ATAG_MEMORY_TYPE 0xf100040D
-struct tag_memory_type {
+struct tag_memory_type 
+{
 	u16 memory_type;
 	u16 padding; /* each atag must be at least 4 bytes */
 };
 
 /* Battery status at boot */
 #define ATAG_BATTERY_STATUS_AT_BOOT 0xf100040E
-struct tag_battery_status_at_boot {
+struct tag_battery_status_at_boot 
+{
 	u16 battery_status_at_boot;
 	u16 padding; /* each atag must be at least 4 bytes */
 };
 
 /* Boot frequency */
 #define ATAG_BOOT_FREQUENCY 0xf100040F
-struct tag_boot_frequency {
+struct tag_boot_frequency 
+{
 	u32 boot_frequency;
 };
 
 /* MEDL info */
 #define ATAG_MEDL_INFO 0xf1000410
-struct tag_medl_info {
+struct tag_medl_info 
+{
 	u32 medl_panel_tag_id;
 	u32 medl_panel_pixel_format;
 	u32 medl_panel_status;
@@ -267,19 +295,22 @@ struct tag_medl_info {
 
 /* MBM bootup time */
 #define ATAG_MBM_BOOTUP_TIME 0xf1000411
-struct tag_mbm_bootup_time {
+struct tag_mbm_bootup_time 
+{
 	u32 mbm_bootup_time;
 };
 
 /* BP loader version */
 #define ATAG_BP_LOADER_VERSION 0xf1000412
-struct tag_bp_loader_version {
+struct tag_bp_loader_version 
+{
 	u32 bp_loader_version;
 };
 
 /* CLI logo version */
 #define ATAG_CLI_LOGO_VERSION 0xf1000413
-struct tag_cli_logo_version {
+struct tag_cli_logo_version 
+{
 	u8 * cli_logo_version;
 	u32  cli_logo_version_max_length;
 };
@@ -304,8 +335,8 @@ struct tag {
 
 		/*
 		 * OMAP specific
-                 */
-                struct tag_omap         omap;
+		 */
+		struct tag_omap         omap;
 
 		/*
 		 * DC21285 specific
@@ -316,24 +347,24 @@ struct tag {
 		 * Motorola specific ATAGs
 		 */
 		struct tag_powerup_reason powerup_reason;
-                struct tag_ipu_buffer_address ipu_buffer_address;
-                struct tag_is_ipu_initialized is_ipu_initialized;
-                struct tag_gpu_context gpu_context;
-                struct tag_usb_firmware_address usb_firmware_address;
-                struct tag_usb_firmware_size usb_firmware_size;
-                struct tag_mbm_version mbm_version;
-                struct tag_mbm_loader_version mbm_loader_version;
-                struct tag_boardid boardid;
-                struct tag_flat_dev_tree_address flat_dev_tree_address;
-                struct tag_flashing_completed flashing_completed;
-                struct tag_logo_version logo_version;
-                struct tag_memory_type memory_type;
-                struct tag_battery_status_at_boot battery_status_at_boot;
-                struct tag_boot_frequency boot_frequency;
-                struct tag_medl_info medl_info;
-                struct tag_mbm_bootup_time mbm_bootup_time;
-                struct tag_bp_loader_version bp_loader_version;
-                struct tag_cli_logo_version cli_logo_version;
+		struct tag_ipu_buffer_address ipu_buffer_address;
+		struct tag_is_ipu_initialized is_ipu_initialized;
+		struct tag_gpu_context gpu_context;
+		struct tag_usb_firmware_address usb_firmware_address;
+		struct tag_usb_firmware_size usb_firmware_size;
+		struct tag_mbm_version mbm_version;
+		struct tag_mbm_loader_version mbm_loader_version;
+		struct tag_boardid boardid;
+		struct tag_flat_dev_tree_address flat_dev_tree_address;
+		struct tag_flashing_completed flashing_completed;
+		struct tag_logo_version logo_version;
+		struct tag_memory_type memory_type;
+		struct tag_battery_status_at_boot battery_status_at_boot;
+		struct tag_boot_frequency boot_frequency;
+		struct tag_medl_info medl_info;
+		struct tag_mbm_bootup_time mbm_bootup_time;
+		struct tag_bp_loader_version bp_loader_version;
+		struct tag_cli_logo_version cli_logo_version;
 	} u;
 };
 

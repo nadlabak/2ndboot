@@ -1,6 +1,6 @@
 #include "buffers.h"
+
 .extern buffers_list
-.extern font_8x8
 .align 4
 
 .macro barrier, reg
@@ -26,25 +26,26 @@
 	cpsid   ifa
 	sub	r14, r15, #0xc         @ virt addr of entry point
 	sub	r14, r14, #0x3f400000
-
+	mov r10, r14
+	mov r8, r15
+    
 	mov	r3, #0
 
 	mcr	p15, 0, r3, c2, c0, 2  @ load new translation table
 	mcr	p15, 0, r2, c2, c0, 0
 	cpwait	r3
 	flush_tlb r2
-	
+
 	sub	r2, pc, #0             @ now we are switching to physical adress for smooth mmu turnoff.
 	sub	pc, r2, #0x3f400000
 
 	b	__with_mmu             @ at that place, pc is physical.
 
+
 __reloc_start__:
 
 p_buffers_list:
 	.word	buffers_list
-p_font_8x8:
-	.word	font_8x8
 
 __reloc_end__:
 
@@ -79,11 +80,13 @@ __with_mmu:
 	ldr	sp, sp_svc
 	mov	r5, r0
 	mov	r6, r1
-	mov	r0, r14
+	@mov	r0, r14 
+	mov	r0, r10
 
 	mov	r1, #__reloc_start__
 	mov	r2, #__reloc_end__
 	bl	fixup_got
+
 	ldr	r1, got_start
 	ldr	r2, got_end
 	bl	fixup_got
@@ -298,6 +301,4 @@ __turn_off_mmu:
 	b	__main
 
 .global _start
-.global jump_to_linux
 .global unpack_buffer
-.global caches_flush_lines

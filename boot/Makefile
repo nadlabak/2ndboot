@@ -1,38 +1,46 @@
-PREFIX		 = /mnt/old/home/nadla/cm9/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi
-CFLAGS		:= -mcpu=cortex-a8 -march=armv7-a -mtune=cortex-a8 -mfpu=vfpv3 -fno-stack-protector -fno-builtin -nostdinc -fPIC -D__LOADER__ -Os -D__PLAT_TI_OMAP3430__
-LDFLAGS		:= -static -nostdlib -fPIC
-ASFLAGS		:= -c -x assembler-with-cpp -mcpu=cortex-a8 -march=armv7-a -mtune=cortex-a8 -mfpu=vfpv3 -D__LOADER__ -D__PLAT_TI_OMAP3430__
+#
+# Makefile for 2nd-boot
+#
 
-ELF_TARGET	 = boot.elf
-RAW_TARGET	 = boot
+CC := $(CROSS_COMPILE)gcc
+LD := $(CROSS_COMPILE)ld
+OBJCOPY := $(CROSS_COMPILE)objcopy
 
-CC		 = $(PREFIX)-gcc
-AS		 = $(PREFIX)-gcc
-LD 		 = $(PREFIX)-gcc
-OBJCOPY		 = $(PREFIX)-objcopy
+CFLAGS := -Os -Wall -Wno-return-type -Wno-main -fno-builtin -fno-stack-protector -march=armv7-a -D__LOADER__ -ffunction-sections -fPIC 
+AFLAGS := -D__ASSEMBLY__ -fno-builtin -march=armv7-a -D__LOADER__ -ffunction-sections
+LDFLAGS := -static -nostdlib --gc-sections 
 
-LD_SCRIPT	:= ld-script
-ASM_OBJS	:= init.o
-C_OBJS		:= main.o images.o console.o vsprintf.o printf.o font_8x8.o memstr.o font.o gpt.o ipu.o atag.o crc32.o hw_misc.o mu.o iomux.o spba.o 
-OBJS		:= $(ASM_OBJS) $(C_OBJS)
+O ?= .
 
-VERSION		 = $(shell hg -q id 2>/dev/null || echo unknown)
-CFLAGS		+= $(CFLAGS) -DLDR_VERSION=\"$(VERSION)\"
+ELF_TARGET := hboot.elf
+RAW_TARGET := hboot.bin
 
-.PHONY		 : all clean install
-all:		$(RAW_TARGET)
-clean:
-	rm -f $(OBJS) $(ELF_TARGET) $(RAW_TARGET)
+VERSION := $(shell hg -q id 2>/dev/null || echo unknown)
+CFLAGS += -DLDR_VERSION=\"$(VERSION)\"
 
-$(ELF_TARGET):	$(OBJS) $(LD_SCRIPT)
-	$(LD) -T$(LD_SCRIPT) $(LDFLAGS) -o $@ $(OBJS)
-$(RAW_TARGET):	$(ELF_TARGET)
+A_OBJS := $(O)/init.o
+C_OBJS := $(O)/main.o $(O)/images.o $(O)/console.o $(O)/vsprintf.o $(O)/printf.o $(O)/memstr.o $(O)/atag.o $(O)/crc32.o
+OBJS := $(A_OBJS) $(C_OBJS)
+
+$(O)/%.o : %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(O)/%.o : %.S
+	$(CC) $(AFLAGS) -c $< -o $@
+
+$(O)/$(RAW_TARGET): $(O)/$(ELF_TARGET)
 	$(OBJCOPY) -O binary -R .note -R .comment -S $< $@
 
+$(O)/$(ELF_TARGET): $(OBJS)
+	$(LD) $(LDFLAGS) -T ld-script -o $@ $(OBJS)
 
-.SECONDEXPANSION:
-$(ASM_OBJS):	$$(patsubst %.o,%.S,$$@)
-	$(AS) $(ASFLAGS) -o $@ $^
-$(C_OBJS):	$$(patsubst %.o,%.c,$$@)
-	$(CC) $(CFLAGS) -c $^
+.PHONY: clean
+
+all: $(O)/$(RAW_TARGET)
+
+clean:
+	rm -f $(OBJS) $(O)/$(ELF_TARGET) $(O)/$(RAW_TARGET)
+
+
+
 

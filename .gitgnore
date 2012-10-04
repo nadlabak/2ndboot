@@ -5,6 +5,7 @@ syntax: glob
 #*
 boot/boot
 boot/boot.elf
+boot/bmake
 hbootuser/hbootuser
 hbootmod/.*.cmd
 hbootmod/.tmp_versions*
