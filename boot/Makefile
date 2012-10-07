@@ -18,7 +18,7 @@ RAW_TARGET := hboot.bin
 VERSION := $(shell hg -q id 2>/dev/null || echo unknown)
 CFLAGS += -DLDR_VERSION=\"$(VERSION)\"
 
-A_OBJS := $(O)/init.o
+A_OBJS := $(O)/init.o $(O)/mbm.o
 C_OBJS := $(O)/main.o $(O)/images.o $(O)/console.o $(O)/vsprintf.o $(O)/printf.o $(O)/memstr.o $(O)/atag.o $(O)/crc32.o
 OBJS := $(A_OBJS) $(C_OBJS)
 

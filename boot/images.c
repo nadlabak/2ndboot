@@ -87,6 +87,7 @@ void image_complete()
 
 		if ((ab->state == B_STAT_COMPLETED) && (ab->attrs & B_ATTR_VERIFY)) 
 		{
+#ifdef HBOOT_VERIFY_CRC32
 			if (ab->checksum != crc32(buffers_list[i].dest, (size_t)ab->size)) 
 			{ 
 				ab->state = B_STAT_CRCERROR;
@@ -94,6 +95,9 @@ void image_complete()
 			}
 			else
 				printf("IMAGE [%d]: CRC OK\n", i);
+#else
+			printf("IMAGE [%d]: LOADED\n", i);
+#endif
 		}
 	}
 }

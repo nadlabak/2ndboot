@@ -175,9 +175,10 @@ static void init_abstract_buffer(struct abstract_buffer *ab, uint8_t tag, uint8_
 	ab->attrs = attrs;
 	ab->size = size;
 
-	if (attrs & B_ATTR_VERIFY) {
+#ifdef HBOOT_VERIFY_CRC32
+	if (attrs & B_ATTR_VERIFY)
 		crc32_init_ctx(&BUFFER_CHECKSUM(ab));
-	}
+#endif
 }
 
 static void free_scattered_buffer(struct scattered_buffer *sc) 
@@ -243,9 +244,10 @@ static int append_scattered_buffer(struct scattered_buffer *sc, const char __use
 		cur_size = min(size, sc->chunk_size - chunk_off);
 		if (!copy_from_user((char*)sc->chunks[chunk] + chunk_off, data + written, cur_size)) 
 		{
+#ifdef HBOOT_VERIFY_CRC32
 			if (BUFFER_ATTRS(sc) & B_ATTR_VERIFY) 
 				crc32_update(&BUFFER_CHECKSUM(sc), (const uint8_t*)sc->chunks[chunk] + chunk_off, cur_size);
-			
+#endif
 			written += cur_size;
 			chunk++;
 			chunk_off = 0;
@@ -290,8 +292,10 @@ static int append_plain_buffer(struct plain_buffer *pb, const char __user *data,
 
 	if (!copy_from_user((char*)pb->data + pos, data, size)) 
 	{
+#ifdef HBOOT_VERIFY_CRC32
 		if (BUFFER_ATTRS(pb) & B_ATTR_VERIFY)
 			crc32_update(&BUFFER_CHECKSUM(pb), (char*)pb->data + pos, size);
+#endif
 		return (int)size;
 	} 
 	else 
@@ -465,8 +469,10 @@ void *get_bootlist(uint32_t *listsize, int handle)
 		buf = &buffers.bufs[i];
 		if (handle != i && buf->container.generic != NULL) 
 		{
+#ifdef HBOOT_VERIFY_CRC32
 			if (BUFFER_ATTRS(buf->container.abstract) & B_ATTR_VERIFY)
 				crc32_final(&BUFFER_CHECKSUM(buf->container.abstract));
+#endif
 
 			BUFFER_STATE(buf->container.abstract) = B_STAT_CREATED;
 			list[j] = (uint32_t)buf->container.generic;

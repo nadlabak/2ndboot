@@ -5,11 +5,13 @@
 #include "common.h"
 #include "memory.h"
 #include "images.h"
+#include "mbm.h"
 
 #define ARCH_NUMBER 2241
 
-#define INTCPS_SYSCONFIG 0x48200010
-#define INTCPS_SYSSTATUS 0x48200014
+/* OMAP Registers */
+
+#define WDTIMER2_BASE						0x48314000
 
 void critical_error(error_t err)
 {
@@ -34,14 +36,19 @@ int main()
 	/* Complete images */
 	image_complete();
 	
-	/* SW reset */
-	write32(2, INTCPS_SYSCONFIG);
-	while(!(read32(INTCPS_SYSSTATUS) & 1));
-
 	if (image_find(IMG_LINUX, &image) != NULL)
 	{
 		printf("KERNEL FOUND!\n");
 		atags = atag_build();
+		
+		/* Disable Watchdog (seqeunce taken from MBM) */
+		write32(0xAAAA, WDTIMER2_BASE + 0x48);
+		delay(500);
+		
+		write32(0x5555, WDTIMER2_BASE + 0x48);
+		delay(500);
+		
+		printf("Watchdog disabled.\n");
 		
 		printf("BOOTING KERNEL!\n");
 		enter_kernel(0, ARCH_NUMBER, atags, KERNEL_DEST);

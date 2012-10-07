@@ -19,10 +19,13 @@
 
 static int dev_major;
 
+/* NOTE: 0x00100000 is mapped per sector, keep that in mind */
+
 #define MMU_48000000					0xFA000000
 #define MMU_49000000					0xFB000000
 
 #define MMU_SDMA_BASE					0xFA056000
+
 #define MMU_UART3_BASE				0xFB020000
 
 #define MMU_CM_FCLKEN_PER			0xFA005000
@@ -63,12 +66,6 @@ void reconfigure_emu_uart(uint32_t uart_speed)
 	ier = __raw_readl(MMU_UART3_BASE + 0x04);
 	__raw_writel(0x00, MMU_UART3_BASE + 0x04); /* Disable IRQs */
 
-	__raw_writel(0xBF, MMU_UART3_BASE + 0x0C);
-	dll = __raw_readl(MMU_UART3_BASE + 0x00);
-	dlh = __raw_readl(MMU_UART3_BASE + 0x04);
-	__raw_writel(0x00, MMU_UART3_BASE + 0x00);
-	__raw_writel(0x00, MMU_UART3_BASE + 0x04);
-
 	__raw_writel(0x80, MMU_UART3_BASE + 0x0C);
 	__raw_writel(0x06, MMU_UART3_BASE + 0x08); /* Disable FIFO */ 
 
@@ -81,14 +78,16 @@ void reconfigure_emu_uart(uint32_t uart_speed)
 	 */
 	
 	div = (UART_CLOCK_BASE_RATE / uart_speed) & 0x3FFF;
+	dll = div & 0xFF;
+	dlh = (div >> 8) & 0x3F;
 	
 	/* It's 14 bit 
 	 * 8 LSB bits goes to 0x00 register
 	 * 6 MSB bits goes to 0x04 register
 	 */
 	
-	__raw_writel(div & 0xFF, MMU_UART3_BASE + 0x00);
-	__raw_writel((div >> 8) & 0x3F, MMU_UART3_BASE + 0x04);
+	__raw_writel(dll, MMU_UART3_BASE + 0x00);
+	__raw_writel(dlh, MMU_UART3_BASE + 0x04);
 
 	__raw_writel(0xBF, MMU_UART3_BASE + 0x0C);
 	__raw_writel(0x00, MMU_UART3_BASE + 0x08);
@@ -120,7 +119,8 @@ int __attribute__((__naked__)) do_branch(void *bootlist, uint32_t bootsize, uint
 	__asm__ volatile (
 		"stmfd  sp!, {r0-r3}\n"
 	);
-	;
+		
+	/* Reset SDMA */
 	__raw_writel(__raw_readl(MMU_SDMA_BASE + 0x2C) | 2, MMU_SDMA_BASE + 0x2C);
 	while (__raw_readl(MMU_SDMA_BASE + 0x28) != 1);
 
@@ -175,8 +175,8 @@ static void l1_map(uint32_t *table, uint32_t phys, uint32_t virt, size_t sects, 
 void build_l1_table(uint32_t *table) 
 {
 	memset(table, 0, 4*4096);
-	l1_map(table, PHYS_OFFSET, PHYS_OFFSET, 512-12, L1_NORMAL_MAPPING);
-	l1_map(table, PHYS_OFFSET, PAGE_OFFSET, 512-12, L1_NORMAL_MAPPING);
+	l1_map(table, PHYS_OFFSET, PHYS_OFFSET, 256-12, L1_NORMAL_MAPPING);
+	l1_map(table, PHYS_OFFSET, PAGE_OFFSET, 256-12, L1_NORMAL_MAPPING);
 	l1_map(table, 0x48000000, MMU_48000000, 1, L1_NORMAL_MAPPING);
 	l1_map(table, 0x49000000, MMU_49000000, 1, L1_NORMAL_MAPPING);
 }
@@ -215,14 +215,14 @@ int hboot_boot(int handle)
 	bootlist = get_bootlist(&listsize, handle);
 	if (bootlist == NULL) 
 		return -ENOMEM;
-	
+		
 	/* UART - if desired */
 	if (emu_uart)
 	{
 		activate_emu_uart();
 		reconfigure_emu_uart(emu_uart);
 	}
-	
+		
 	/* Disable preempting */
 	preempt_disable();
 	local_irq_disable();
