@@ -36,17 +36,17 @@
 #include <linux/io.h>
 
 #include <linux/spi/spi.h>
-#include <plat/system.h>
+#include <mach/system.h>
 #include <linux/irq.h>
 #include <linux/spi/spi.h>                                                                                                                                                       
 #include <linux/spi/cpcap.h>                                                                                                                                                     
 #include <linux/spi/cpcap-regbits.h> 
 
-#include <plat/dma.h>
-#include <plat/clock.h>
-#include <plat/board-mapphone-emu_uart.h>
-#include <plat/hardware.h>
-#include <plat/omap34xx.h>
+#include <mach/dma.h>
+#include <mach/clock.h>
+#include <mach/board-mapphone-emu_uart.h>
+#include <mach/hardware.h>
+#include <mach/omap34xx.h>
 
 /*
  * Register definitions for CPCAP related SPI register
