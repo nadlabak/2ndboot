@@ -68,7 +68,7 @@ int try_file(const char *path, size_t *size) {
 	return fd;
 }
 
-int user_allocate_buffer(int tag, size_t size, int type, int attrs, uint32_t rest) {
+int allocate_buffer(int tag, size_t size, int type, int attrs, uint32_t rest) {
 	struct hboot_buffer_req req;
 	int ret;
 
@@ -146,7 +146,7 @@ int handle_file(FILE *fp, int tag, int *buf) {
 	} else {
 		battrs = B_ATTR_VERIFY;
 	}
-	if ((*buf = user_allocate_buffer(tag, filesize, btype, battrs, 0)) == INVALID_BUFFER_HANDLE) {
+	if ((*buf = allocate_buffer(tag, filesize, btype, battrs, 0)) == INVALID_BUFFER_HANDLE) {
 		fprintf(stderr, "failed to allocate buffer\n");
 		close(fd);
 		return -1;
@@ -171,7 +171,7 @@ int handle_nand(FILE *fp, int tag, int *buf) {
 		fprintf(stderr, "can't parse data\n");
 		return -1;
 	}
-	if ((*buf = user_allocate_buffer(tag, size, B_TYPE_NAND, 0, (uint32_t)offset)) == INVALID_BUFFER_HANDLE) {
+	if ((*buf = allocate_buffer(tag, size, B_TYPE_NAND, 0, (uint32_t)offset)) == INVALID_BUFFER_HANDLE) {
 		fprintf(stderr, "failed to allocate buffer\n");
 		return -1;
 	}
