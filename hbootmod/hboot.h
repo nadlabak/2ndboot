@@ -3,6 +3,7 @@
 
 #include "buffers.h"
 
+#ifdef __KERNEL__
 #include <linux/types.h>
 
 uint32_t get_high_mem(size_t size);
@@ -21,6 +22,7 @@ void buffers_destroy(void);
 typedef void (*bootfunc_t)(void *, uint32_t);
 bootfunc_t get_bootentry(uint32_t *bootsize, int handle);
 void *get_bootlist(uint32_t *listsize, int handle);
+#endif
 
 struct hboot_buffer_req 
 {

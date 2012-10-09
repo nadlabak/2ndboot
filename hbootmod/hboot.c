@@ -25,9 +25,9 @@ static struct class *dev_class;
 #define MMU_48000000					0xFA000000
 #define MMU_49000000					0xFB000000
 
-#define MMU_SDMA_BASE					0xFA056000
+#define MMU_SDMA_BASE					0xD8056000
 
-#define MMU_UART3_BASE				0xFB020000
+#define MMU_UART3_BASE				0xD9020000
 
 #define MMU_CM_FCLKEN_PER			0xFA005000
 #define MMU_CM_ICLKEN_PER			0xFA005010
