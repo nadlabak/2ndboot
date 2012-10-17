@@ -21,6 +21,7 @@ Running 2nd-boot:
 SCRIPT:
 ====================================================================================
 insmod /system/etc/2nd-boot/hbootmod.ko [emu_uart=115200]
+mknod /dev/hbootctrl c `cat /proc/devices | grep hboot | awk '{print $1}' ` 0
 /system/etc/2nd-boot/hbootuser /system/etc/2nd-boot/hboot.cfg 
 ====================================================================================
 

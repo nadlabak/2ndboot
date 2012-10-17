@@ -18,7 +18,6 @@
 #define CTRL_DEVNAME "hbootctrl"
 
 static int dev_major;
-static struct class *dev_class;
 
 /* NOTE: 0x00100000 is mapped per sector, keep that in mind */
 
@@ -308,7 +307,6 @@ static int hbootctrl_write(struct file *file, const char __user *buf, size_t cou
 int __init hbootmod_init(void) 
 {
 	int ret;
-	struct device *dev;
 
 	ret = buffers_init();
 	if (ret < 0) 
@@ -331,15 +329,6 @@ int __init hbootmod_init(void)
 		printk(KERN_WARNING CTRL_DEVNAME ": Failed to create dev\n");
 		unregister_chrdev(dev_major, CTRL_DEVNAME);
 		buffers_destroy();
-		return ret;
-	}
-
-	dev_class = class_create(THIS_MODULE, CTRL_DEVNAME);
-	dev = device_create(dev_class, NULL, MKDEV(dev_major,0), NULL, CTRL_DEVNAME);
-	if (IS_ERR(dev))
-	{
-		ret = PTR_ERR(dev);
-		printk(KERN_WARNING CTRL_DEVNAME ": Failed to create /dev/" CTRL_DEVNAME);
 		return ret;
 	}
 
