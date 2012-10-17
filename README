@@ -11,6 +11,13 @@ hboot:
 - "make O=output_directory CROSS_COMPILE=cross_compiler_prefix"
 - NOTE: You can name the script with the values as "bmake", which is in .gitignore
 
+- Several compilation defines:
+  UART_DEBUG to specify uart debugging
+  UART_BAUDRATE as baudrate which is passed to the kernel as default cmdline
+  
+- Board is required to be specified as we have board specific setup, currently implemented
+  BOARD_UMTS_SHOLES - Motorola Milestone 1
+
 hbootuser:
 - Compiled as a normal Android binary
 

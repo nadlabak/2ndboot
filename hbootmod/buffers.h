@@ -33,14 +33,12 @@ struct abstract_buffer
 
 #define IMG_ATTR_LAZY    (1 << 0)
 
+#define IMG_HBOOT        (0)
 #define IMG_LINUX        (1)
 #define IMG_INITRAMFS    (2)
-#define IMG_MOTFLATTREE  (3)
+#define IMG_DEVTREE      (3)
 #define IMG_CMDLINE      (4)
-#define IMG_USBFW        (5)
-#define IMG_BPLOADER     (6)
-#define IMG_BPFW         (7)
 
-#define IMG_LAST_TAG     IMG_BPFW
+#define IMG_LAST_TAG     IMG_CMDLINE
 
 #endif // __BUFFERS_H__

@@ -108,7 +108,7 @@ __buffers_end:
 find_tag:
 	cmp	r0, #IMG_LAST_TAG
 	ldrls	r1, p_buffers_list
-	addls	r1, r1, r0, lsl #5     @ each entry is 8-words long
+	addls	r1, r1, r0, lsl #6     @ each entry is 64 bytes long
 	movhi	r1, #0
 	mov	r0, r1
 	bx	lr

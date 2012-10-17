@@ -6,11 +6,13 @@
 #include "atag.h"
 #include "common.h"
 #include "string.h"
+#include "board.h"
 
 void *atag_build() 
 {
 	struct memory_image image;
-	struct tag *tag = (struct tag*)ATAG_BASE_ADDR;
+	struct tag* tag = (struct tag*)ATAG_BASE_ADDR;
+	char* atag_cmdline;
 
 	printf("Creating ATAGS\n");
 
@@ -21,21 +23,32 @@ void *atag_build()
 	tag->u.core.rootdev = 0x0000;
 	tag = tag_next(tag);
 
+	/* Add powerup reason */
+	tag->hdr.tag = ATAG_POWERUP_REASON;
+	tag->hdr.size = tag_size (tag_powerup_reason);
+	/* FIXME: pass it from the parent kernel */
+	tag->u.powerup_reason.powerup_reason = 0x00004000;
+	tag = tag_next(tag);
+	
+	atag_cmdline = tag->u.cmdline.cmdline;
+	
+	tag->hdr.tag = ATAG_CMDLINE;
+	
 	if (image_find(IMG_CMDLINE, &image) != NULL) 
 	{
-		char *atag_cmdline = tag->u.cmdline.cmdline;
-
-		tag->hdr.tag = ATAG_CMDLINE;
-		tag->hdr.size = (sizeof(struct tag_header) + image.size + 1 + 3) >> 2;
 		memcpy(atag_cmdline, image.data, image.size);
 		
-		if (atag_cmdline[image.size-1] == '\xa') 
+		if (atag_cmdline[image.size-1] == '\xa' || atag_cmdline[image.size-1] == '\n') 
 			atag_cmdline[image.size-1] = '\0';
 		else
 			atag_cmdline[image.size] = '\0';
 		
-		printf("CMDLINE: %s\n", atag_cmdline);
-		tag = tag_next(tag);
+		tag->hdr.size = (sizeof(struct tag_header) + image.size + 1 + 3) >> 2;
+	}
+	else
+	{
+		strcpy(atag_cmdline, board_get_cmdline());
+		tag->hdr.size = (sizeof(struct tag_header) + strlen(atag_cmdline) + 1 + 3) >> 2;
 	}
 
 	/* Add special MBM and MBMLOADER versions ATAG */

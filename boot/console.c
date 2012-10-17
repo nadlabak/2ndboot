@@ -1,22 +1,27 @@
 #include "types.h"
 #include "stdio.h"
 #include "string.h"
-#include "error.h"
+#include "board.h"
 #include "common.h"
 
-#define UART3_BASE 			0x49020000
+#ifdef UART_DEBUG
 
 int putchar(int c) 
 {
 	if (c == '\n')
 		putchar('\r');
 	
-	while ((read32(UART3_BASE + 0x44) & 1) != 0);
+	while ((read32(BOARD_DEBUG_UART_BASE + 0x44) & 1) != 0);
+	write32(c, BOARD_DEBUG_UART_BASE + 0x00);
 	
-	write32(c, UART3_BASE + 0x00);
-	
-  return (unsigned char)c;
+	return (unsigned char)c;
 }
+
+#else
+
+#define putchar(c) (c)
+
+#endif
 
 int puts(const char *s) 
 {

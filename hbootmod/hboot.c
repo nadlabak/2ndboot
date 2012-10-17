@@ -128,12 +128,23 @@ int __attribute__((__naked__)) do_branch(void *bootlist, uint32_t bootsize, uint
 	v7_flush_kern_cache_all();
 
 	/* Disable any caches */
-	__asm__ volatile (
+	__asm__ volatile 
+	(
 		"mov    r0, #0x00\n"
 		
 		/* Invalidate Cache */
 		"mcr    p15, 0, r0, c7, c5, 0\n"
+		"mcr    p15, 0, r0, c7, c5, 4\n"
 		"mcr    p15, 0, r0, c7, c5, 6\n"
+		
+		/* Invalidate TLBs */
+		"mcr    p15, 0, r0, c8, c7, 0\n"
+		"mcr    p15, 0, r0, c8, c6, 0\n"
+		"mcr    p15, 0, r0, c8, c5, 0\n"
+		
+		/* Barriers */
+		"mcr     p15, 0, r0, c7, c10, 4\n"
+		"mcr     p15, 0, r0, c7, c5, 4\n"
 		
 		/* Control Register */
 		"mrc    p15, 0, r0, c1, c0, 0\n"
@@ -311,28 +322,20 @@ int __init hbootmod_init(void)
 	ret = buffers_init();
 	if (ret < 0) 
 	{
-		printk(KERN_WARNING CTRL_DEVNAME ": Failed to initialize buffers table\n");
+		printk(KERN_ERR CTRL_DEVNAME ": Failed to initialize buffers table\n");
 		return ret;
 	}
 
 	ret = register_chrdev(0, CTRL_DEVNAME, &hbootctrl_ops);
 	if (ret < 0) 
 	{
-		printk(KERN_WARNING CTRL_DEVNAME ": Failed to register dev\n");
+		printk(KERN_ERR CTRL_DEVNAME ": Failed to register dev\n");
 		buffers_destroy();
 		return ret;
 	}
 	dev_major = ret;
 
-	if (ret < 0) 
-	{
-		printk(KERN_WARNING CTRL_DEVNAME ": Failed to create dev\n");
-		unregister_chrdev(dev_major, CTRL_DEVNAME);
-		buffers_destroy();
-		return ret;
-	}
-
-	printk(KERN_INFO CTRL_DEVNAME ":  Successfully registered dev\n");
+	printk(KERN_INFO CTRL_DEVNAME ":  Successfully registered.\n");
 	return 0;
 }
 

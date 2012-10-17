@@ -6,8 +6,9 @@ CC := $(CROSS_COMPILE)gcc
 LD := $(CROSS_COMPILE)ld
 OBJCOPY := $(CROSS_COMPILE)objcopy
 
-CFLAGS := -Os -Wall -Wno-return-type -Wno-main -fno-builtin -fno-stack-protector -march=armv7-a -D__LOADER__ -ffunction-sections -fPIC 
-AFLAGS := -D__ASSEMBLY__ -fno-builtin -march=armv7-a -D__LOADER__ -ffunction-sections
+EXTRA_CFLAGS ?= .
+CFLAGS := -Os -Wall -Wno-return-type -Wno-main -fno-builtin -fno-stack-protector -march=armv7-a -ffunction-sections -fPIC $(EXTRA_CFLAGS)
+AFLAGS := -D__ASSEMBLY__ -fno-builtin -march=armv7-a -ffunction-sections
 LDFLAGS := -static -nostdlib --gc-sections 
 
 O ?= .
@@ -19,7 +20,7 @@ VERSION := $(shell hg -q id 2>/dev/null || echo unknown)
 CFLAGS += -DLDR_VERSION=\"$(VERSION)\"
 
 A_OBJS := $(O)/init.o $(O)/mbm.o
-C_OBJS := $(O)/main.o $(O)/images.o $(O)/console.o $(O)/vsprintf.o $(O)/printf.o $(O)/memstr.o $(O)/atag.o $(O)/crc32.o
+C_OBJS := $(O)/main.o $(O)/board.o $(O)/images.o $(O)/console.o $(O)/vsprintf.o $(O)/printf.o $(O)/memstr.o $(O)/atag.o $(O)/crc32.o
 OBJS := $(A_OBJS) $(C_OBJS)
 
 $(O)/%.o : %.c
