@@ -4,10 +4,15 @@
 #include "board.h"
 #include "common.h"
 
-#ifdef UART_DEBUG
+/* NOTE: These are initialized PRIOR bss cleanup */
+uint32_t __attribute__ ((section ("data"))) cfg_powerup_reason = 0x00000080;
+uint32_t __attribute__ ((section ("data"))) cfg_emu_uart = 0;
 
 int putchar(int c) 
 {
+	if (!cfg_emu_uart)
+		return;
+	
 	if (c == '\n')
 		putchar('\r');
 	
@@ -17,16 +22,10 @@ int putchar(int c)
 	return (unsigned char)c;
 }
 
-#else
-
-#define putchar(c) (c)
-
-#endif
-
 int puts(const char *s) 
 {
 	unsigned char c;
-
+	
 	while (c = (unsigned char)(*s++)) 
 	{
 		if (putchar((int)c) == EOF)
@@ -46,3 +45,4 @@ void u_to_hex(int x, int digits, char *s)
 		x >>= 4;
 	}
 }
+ 

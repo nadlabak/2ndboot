@@ -1,33 +1,23 @@
 #include "common.h"
 #include "board.h"
+#include "string.h"
 #include "memory.h"
 
-#define STR_EXPAND(tok) #tok
-#define STR(tok) STR_EXPAND(tok)
-
-#ifndef UART_BAUDRATE
-#define UART_BAUDRATE 115200
-#endif
+char cmdline_buffer[1024];
 
 #ifdef BOARD_UMTS_SHOLES
 
 /* CMDLINE */
-
-#ifdef UART_DEBUG
-
-#define DEFAULT_CMDLINE \
-"console=ttyS2," STR(UART_BAUDRATE) "n8 vram=4M omapfb.vram=0:4M rw mem=244M@0x80C00000 init=/init ip=off brdrev=P2A " \
-"mtdparts=omap2-nand.0:1536k@2176k(pds),384k@4480k(cid),384k@7424k(misc),3584k(boot),4608k@15232k(recovery)," \
-"8960k(cdrom),179840k@29184k(system),106m@209408k(cache),201856k(userdata),1536k(cust),2m@521728k(kpanic)"
-
-#else
 
 #define DEFAULT_CMDLINE \
 "console=/dev/null console=ttyMTD10 vram=4M omapfb.vram=0:4M rw mem=244M@0x80C00000 init=/init ip=off brdrev=P2A " \
 "mtdparts=omap2-nand.0:1536k@2176k(pds),384k@4480k(cid),384k@7424k(misc),3584k(boot),4608k@15232k(recovery)," \
 "8960k(cdrom),179840k@29184k(system),106m@209408k(cache),201856k(userdata),1536k(cust),2m@521728k(kpanic)"
 
-#endif
+#define DEFAULT_UART_CMDLINE \
+"console=ttyS2,%un8 vram=4M omapfb.vram=0:4M rw mem=244M@0x80C00000 init=/init ip=off brdrev=P2A " \
+"mtdparts=omap2-nand.0:1536k@2176k(pds),384k@4480k(cid),384k@7424k(misc),3584k(boot),4608k@15232k(recovery)," \
+"8960k(cdrom),179840k@29184k(system),106m@209408k(cache),201856k(userdata),1536k(cust),2m@521728k(kpanic)"
 
 /* Used registers */
 #define GPTIMER1_BASE						0x48318000
@@ -57,9 +47,14 @@
 /* Get CMDLINE */
 const char *board_get_cmdline()
 {
-	return DEFAULT_CMDLINE;
+	if (!cfg_emu_uart)
+		return DEFAULT_CMDLINE;
+	else
+	{
+		sprintf(cmdline_buffer, DEFAULT_UART_CMDLINE, cfg_emu_uart);
+		return cmdline_buffer;
+	}
 }
-
 
 void board_init()
 {

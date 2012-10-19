@@ -28,7 +28,7 @@ void __attribute__((__naked__)) l2cache_enable(void)
 	);
 }
 
-void __attribute__((__naked__)) enter_kernel(int zero, int arch, void *atags, int kernel_address) 
+void __attribute__((__naked__)) enter_kernel(int zero, int arch, void *atags, unsigned long kernel_address) 
 {
 	__asm__ volatile 
 	(
@@ -48,12 +48,11 @@ int main()
 	
 	if (image_find(IMG_LINUX, &image) != NULL)
 	{
-		printf("KERNEL FOUND!\n");
 		atags = atag_build();
 		
 		/* Reinit board */
 		board_init();
-		printf("BOARD INITIALIZED\n");
+		printf("Board initialized.\n");
 		
 		/* Disable Watchdog (seqeunce taken from MBM) */
 		write32(0xAAAA, BOARD_WDTIMER2_BASE + 0x48);
@@ -62,9 +61,9 @@ int main()
 		write32(0x5555, BOARD_WDTIMER2_BASE + 0x48);
 		delay(500);
 		
-		printf("BOOTING KERNEL!\n");
+		printf("Booting kernel.\n");
 		l2cache_enable();
-		enter_kernel(0, ARCH_NUMBER, atags, KERNEL_DEST);
+		enter_kernel(0, ARCH_NUMBER, atags, (unsigned long) image.data);
 	}
 	else 
 		critical_error("No kernel image.");

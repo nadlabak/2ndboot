@@ -10,6 +10,7 @@
 #include <linux/platform_device.h>
 #include <linux/device.h>
 #include <linux/suspend.h>
+#include <asm/bootinfo.h>
 
 #include "hboot.h"
 #include "emu_uart.h"
@@ -114,9 +115,12 @@ void reconfigure_emu_uart(uint32_t uart_speed)
 	__raw_writel('\n', MMU_UART3_BASE + 0x00); while ((__raw_readl(MMU_UART3_BASE + 0x44) & 1) != 0);
 }
 
-int __attribute__((__naked__)) do_branch(void *bootlist, uint32_t bootsize, uint32_t new_ttbl, void *func) 
+int __attribute__((__naked__)) do_branch(void *bootlist, uint32_t bootsize, uint32_t new_ttbl, void *func, 
+																				 uint32_t p_emu_uart, uint32_t p_powerup_reason) 
 {
-	__asm__ volatile (
+	__asm__ volatile 
+	(
+		"sub    sp, sp, #0x8\n"
 		"stmfd  sp!, {r0-r3}\n"
 	);
 		
@@ -163,9 +167,17 @@ int __attribute__((__naked__)) do_branch(void *bootlist, uint32_t bootsize, uint
 		"bic    r0, #0x02\n"
 		"mcr    p15, 0, r0, c1, c0, 1\n"
 		
-		/* OK - Ready to branch */
 		"ldmfd  sp!, {r0-r3}\n"
-		"bx r3\n"
+		"add    sp, sp, #0x8\n"
+		
+		/* r4 - emu_uart parameter */
+		"ldr    r4, [sp]\n"
+		
+		/* r5 - powerup reason */
+		"ldr    r5, [sp, #0x04]\n"
+		
+		/* OK - Ready to branch */
+		"bx     r3\n"
 	);
 
 	return 0;
@@ -239,7 +251,7 @@ int hboot_boot(int handle)
 	local_irq_disable();
 	local_fiq_disable();
 
-	do_branch(bootlist, listsize, virt_to_phys(l1_table), boot_entry);
+	do_branch(bootlist, listsize, virt_to_phys(l1_table), boot_entry, emu_uart, bi_powerup_reason());
 	return -EBUSY;
 }
 
