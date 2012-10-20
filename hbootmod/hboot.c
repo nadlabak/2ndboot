@@ -35,6 +35,15 @@ static int dev_major;
 /* Clock is 48 MHz, divided by 16 */
 #define UART_CLOCK_BASE_RATE	2995200
 
+/* Board based setup */
+#ifdef BOARD_UMTS_SHOLES
+# define BOARD_MEMORY_SIZE (256-12)
+#elif defined(BOARD_UMTS_JORDAN) || defined(BOARD_UMTS_MILESTONE2)
+# define BOARD_MEMORY_SIZE (512-14)
+#else
+# error "No board defined!"
+#endif
+
 /* We have MMU enabled, so pick the virt. address */
 void reconfigure_emu_uart(uint32_t uart_speed)
 {
@@ -198,8 +207,8 @@ static void l1_map(uint32_t *table, uint32_t phys, uint32_t virt, size_t sects, 
 void build_l1_table(uint32_t *table) 
 {
 	memset(table, 0, 4*4096);
-	l1_map(table, PHYS_OFFSET, PHYS_OFFSET, 256-12, L1_NORMAL_MAPPING);
-	l1_map(table, PHYS_OFFSET, PAGE_OFFSET, 256-12, L1_NORMAL_MAPPING);
+	l1_map(table, PHYS_OFFSET, PHYS_OFFSET, BOARD_MEMORY_SIZE, L1_NORMAL_MAPPING);
+	l1_map(table, PHYS_OFFSET, PAGE_OFFSET, BOARD_MEMORY_SIZE, L1_NORMAL_MAPPING);
 	l1_map(table, 0x48000000, MMU_48000000, 1, L1_NORMAL_MAPPING);
 	l1_map(table, 0x49000000, MMU_49000000, 1, L1_NORMAL_MAPPING);
 }
