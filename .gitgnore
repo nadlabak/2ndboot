@@ -3,9 +3,9 @@ syntax: glob
 *.ko
 *~
 #*
-boot/boot
-boot/boot.elf
-boot/bmake
+hboot/hboot.bin
+hboot/hboot.elf
+hboot/bmake
 hbootuser/hbootuser
 hbootmod/.*.cmd
 hbootmod/.tmp_versions*
